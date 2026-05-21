@@ -229,12 +229,106 @@ async function setRoomVolume(roomName, volumeVal) {
 }
 
 /**
+ * Unescapes XML entities exactly once.
+ * Replaces &amp; last to prevent double-unescaping in a single pass.
+ * @param {string} safe - The XML string.
+ * @returns {string} The unescaped string.
+ */
+function unescapeXmlOnce(safe) {
+  if (!safe) return '';
+  return safe
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
+/**
+ * Unescapes XML entities recursively/standardly.
+ * @param {string} safe - The XML string.
+ * @returns {string} The unescaped string.
+ */
+function unescapeXml(safe) {
+  if (!safe) return '';
+  return safe
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+/**
  * Retrieves favorites from a speaker.
  */
 async function getFavorites(roomName) {
   const device = getDevice(roomName);
-  const response = await device.ContentDirectoryService.BrowseParsedWithDefaults('FV:2');
-  return response.Result || response;
+  const response = await device.ContentDirectoryService.Browse({
+    ObjectID: 'FV:2',
+    BrowseFlag: 'BrowseDirectChildren',
+    Filter: '*',
+    StartingIndex: 0,
+    RequestedCount: 100,
+    SortCriteria: ''
+  });
+
+  if (!response || !response.Result) {
+    return [];
+  }
+
+  const xml = unescapeXmlOnce(response.Result);
+  const itemRegex = /<item\s+[^>]*>([\s\S]*?)<\/item>/g;
+  let match;
+
+  const parsedFavorites = [];
+
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const content = match[1];
+    
+    // Extract dc:title
+    const titleMatch = content.match(/<dc:title>([\s\S]*?)<\/dc:title>/);
+    const title = titleMatch ? unescapeXmlOnce(titleMatch[1]) : '';
+    
+    // Extract res (URI)
+    const resMatch = content.match(/<res[^>]*>([\s\S]*?)<\/res>/);
+    const uri = resMatch ? unescapeXmlOnce(resMatch[1]) : '';
+
+    // Extract upnp:class
+    const classMatch = content.match(/<upnp:class>([^<]+)<\/upnp:class>/);
+    const upnpClass = classMatch ? classMatch[1] : '';
+
+    // Extract r:resMD (Metadata)
+    const mdMatch = content.match(/<r:resMD>([\s\S]*?)<\/r:resMD>/);
+    let trackObj = null;
+    if (mdMatch) {
+      const rawMetadata = unescapeXml(mdMatch[1]);
+      
+      const idMatch = rawMetadata.match(/<item id="([^"]+)"/);
+      const parentIdMatch = rawMetadata.match(/parentID="([^"]+)"/);
+      const subClassMatch = rawMetadata.match(/<upnp:class>([^<]+)<\/upnp:class>/);
+      const cdudnMatch = rawMetadata.match(/<desc id="cdudn"[^>]*>([^<]+)<\/desc>/);
+      const artMatch = rawMetadata.match(/<upnp:albumArtURI>([^<]+)<\/upnp:albumArtURI>/);
+
+      trackObj = {
+        ItemId: idMatch ? idMatch[1] : undefined,
+        ParentId: parentIdMatch ? parentIdMatch[1] : undefined,
+        UpnpClass: subClassMatch ? subClassMatch[1] : undefined,
+        CdUdn: cdudnMatch ? cdudnMatch[1] : undefined,
+        AlbumArtUri: artMatch ? artMatch[1] : undefined,
+        Title: title
+      };
+    }
+
+    parsedFavorites.push({
+      Title: title,
+      Uri: uri,
+      UpnpClass: upnpClass,
+      TrackMetadata: trackObj
+    });
+  }
+
+  return parsedFavorites;
 }
 
 /**
@@ -250,15 +344,44 @@ async function playFavorite(roomName, favoriteName) {
     throw new Error(`Favorite "${favoriteName}" not found in room "${roomName}".`);
   }
 
-  // Set URI
-  await device.AVTransportService.SetAVTransportURI({
-    InstanceID: 0,
-    CurrentURI: fav.Uri || fav.uri,
-    CurrentURIMetaData: fav.MetaData || fav.metadata || ''
-  });
+  const uri = fav.Uri;
+  const trackObj = fav.TrackMetadata;
+  const upnpClass = fav.UpnpClass || (trackObj && trackObj.UpnpClass) || '';
 
-  // Play
-  await device.Play();
+  const isContainer = upnpClass.startsWith('object.container.');
+
+  if (isContainer) {
+    // 1. Clear queue
+    try {
+      await device.AVTransportService.RemoveAllTracksFromQueue({ InstanceID: 0 });
+    } catch (e) {
+      // Ignore if queue already empty or failed to clear
+    }
+    
+    // 2. Add container to queue
+    await device.AVTransportService.AddURIToQueue({
+      InstanceID: 0,
+      EnqueuedURI: uri,
+      EnqueuedURIMetaData: trackObj,
+      DesiredFirstTrackNumberEnqueued: 1,
+      EnqueueAsNext: true
+    });
+    
+    // 3. Switch to queue
+    await device.SwitchToQueue();
+    
+    // 4. Play
+    await device.Play();
+  } else {
+    // Stream or individual track
+    await device.AVTransportService.SetAVTransportURI({
+      InstanceID: 0,
+      CurrentURI: uri,
+      CurrentURIMetaData: trackObj || ''
+    });
+    
+    await device.Play();
+  }
 
   // Instant Loxone UDP notification
   const norm = normalizeRoomName(device.Name);

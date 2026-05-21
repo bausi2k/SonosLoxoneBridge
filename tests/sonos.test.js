@@ -27,6 +27,23 @@ jest.mock('../src/tts', () => ({
   generateTts: jest.fn().mockResolvedValue('tts-file.mp3')
 }));
 
+const mockBrowseResult = `&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;
+  &lt;item id=&quot;FV:2/1&quot; parentID=&quot;FV:2&quot; restricted=&quot;true&quot;&gt;
+    &lt;dc:title&gt;Klassik Radio&lt;/dc:title&gt;
+    &lt;upnp:class&gt;object.item.audioItem.audioBroadcast&lt;/upnp:class&gt;
+    &lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON65031_&lt;/desc&gt;
+    &lt;res protocolInfo=&quot;x-sonosapi-stream:*:*:*&quot;&gt;x-sonosapi-stream:kr&lt;/res&gt;
+    &lt;r:resMD&gt;&amp;lt;item id=&amp;quot;FV:2/1&amp;quot; parentID=&amp;quot;FV:2&amp;quot;&amp;gt;&amp;lt;upnp:class&amp;gt;object.item.audioItem.audioBroadcast&amp;lt;/upnp:class&amp;gt;&amp;lt;desc id=&amp;quot;cdudn&amp;quot;&amp;gt;SA_RINCON65031_&amp;lt;/desc&amp;gt;&amp;lt;/item&amp;gt;&lt;/r:resMD&gt;
+  &lt;/item&gt;
+  &lt;item id=&quot;FV:2/2&quot; parentID=&quot;FV:2&quot; restricted=&quot;true&quot;&gt;
+    &lt;dc:title&gt;Baby Einschlafmusik&lt;/dc:title&gt;
+    &lt;upnp:class&gt;object.container.playlistContainer&lt;/upnp:class&gt;
+    &lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON2311_&lt;/desc&gt;
+    &lt;res protocolInfo=&quot;x-rincon-cpcontainer:*:*:*&quot;&gt;x-rincon-cpcontainer:spotify:playlist&lt;/res&gt;
+    &lt;r:resMD&gt;&amp;lt;item id=&amp;quot;FV:2/2&amp;quot; parentID=&amp;quot;FV:2&amp;quot;&amp;gt;&amp;lt;upnp:class&amp;gt;object.container.playlistContainer&amp;lt;/upnp:class&amp;gt;&amp;lt;desc id=&amp;quot;cdudn&amp;quot;&amp;gt;SA_RINCON2311_&amp;lt;/desc&amp;gt;&amp;lt;upnp:albumArtURI&amp;gt;http://example.com/art.jpg&amp;lt;/upnp:albumArtURI&amp;gt;&amp;lt;/item&amp;gt;&lt;/r:resMD&gt;
+  &lt;/item&gt;
+&lt;/DIDL-Lite&gt;`;
+
 describe('Sonos Integration', () => {
   let mockDevice;
 
@@ -52,18 +69,18 @@ describe('Sonos Integration', () => {
       Pause: jest.fn().mockResolvedValue(true),
       SetVolume: jest.fn().mockResolvedValue(true),
       PlayNotification: jest.fn().mockResolvedValue(true),
+      SwitchToQueue: jest.fn().mockResolvedValue(true),
       AVTransportService: {
         GetTransportInfo: jest.fn().mockResolvedValue({ CurrentTransportState: 'PLAYING' }),
-        SetAVTransportURI: jest.fn().mockResolvedValue(true)
+        SetAVTransportURI: jest.fn().mockResolvedValue(true),
+        RemoveAllTracksFromQueue: jest.fn().mockResolvedValue(true),
+        AddURIToQueue: jest.fn().mockResolvedValue(true)
       },
       RenderingControlService: {
         GetVolume: jest.fn().mockResolvedValue({ CurrentVolume: 25 })
       },
       ContentDirectoryService: {
-        BrowseParsedWithDefaults: jest.fn().mockResolvedValue([
-          { Title: 'Radio Eins', Uri: 'x-sonosapi-stream:r1', MetaData: 'metadata-1' },
-          { Title: 'Klassik Radio', Uri: 'x-sonosapi-stream:kr', MetaData: 'metadata-2' }
-        ])
+        Browse: jest.fn().mockResolvedValue({ Result: mockBrowseResult })
       }
     };
 
@@ -146,15 +163,46 @@ describe('Sonos Integration', () => {
     });
   });
 
-  test('should play favorites by name', async () => {
+  test('should parse and play stream favorites directly (SetAVTransportURI)', async () => {
     const playedTitle = await playFavorite('wohnzimmer', 'Klassik Radio');
     expect(playedTitle).toBe('Klassik Radio');
     
     expect(mockDevice.AVTransportService.SetAVTransportURI).toHaveBeenCalledWith({
       InstanceID: 0,
       CurrentURI: 'x-sonosapi-stream:kr',
-      CurrentURIMetaData: 'metadata-2'
+      CurrentURIMetaData: {
+        ItemId: 'FV:2/1',
+        ParentId: 'FV:2',
+        UpnpClass: 'object.item.audioItem.audioBroadcast',
+        CdUdn: 'SA_RINCON65031_',
+        AlbumArtUri: undefined,
+        Title: 'Klassik Radio'
+      }
     });
+    expect(mockDevice.Play).toHaveBeenCalled();
+    expect(sendPlayStatus).toHaveBeenCalledWith('Living Room', true);
+  });
+
+  test('should play container favorites via Queue routing (Clear Queue, Add to Queue, Switch, Play)', async () => {
+    const playedTitle = await playFavorite('wohnzimmer', 'Baby Einschlafmusik');
+    expect(playedTitle).toBe('Baby Einschlafmusik');
+
+    expect(mockDevice.AVTransportService.RemoveAllTracksFromQueue).toHaveBeenCalledWith({ InstanceID: 0 });
+    expect(mockDevice.AVTransportService.AddURIToQueue).toHaveBeenCalledWith({
+      InstanceID: 0,
+      EnqueuedURI: 'x-rincon-cpcontainer:spotify:playlist',
+      EnqueuedURIMetaData: {
+        ItemId: 'FV:2/2',
+        ParentId: 'FV:2',
+        UpnpClass: 'object.container.playlistContainer',
+        CdUdn: 'SA_RINCON2311_',
+        AlbumArtUri: 'http://example.com/art.jpg',
+        Title: 'Baby Einschlafmusik'
+      },
+      DesiredFirstTrackNumberEnqueued: 1,
+      EnqueueAsNext: true
+    });
+    expect(mockDevice.SwitchToQueue).toHaveBeenCalled();
     expect(mockDevice.Play).toHaveBeenCalled();
     expect(sendPlayStatus).toHaveBeenCalledWith('Living Room', true);
   });
