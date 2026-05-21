@@ -1,16 +1,16 @@
 /* ==========================================================================
    SonosLoxoneBridge Premium Stylesheet (Vanilla CSS)
    Aesthetics: Clean Card-Based Design (Design-Guide Style)
-   Features: Light/Dark Mode Switch, Red & Blue Highlights, Responsive UI
+   Features: Light/Dark Mode Switch, Red & Orange Highlights, Responsive UI
    ========================================================================== */
 
 :root {
-  /* Light Mode (Premium Neo-Apple Glassmorphism) */
-  --bg-main: #f0f4f8;        /* Soft ice-blue light background */
-  --bg-card: rgba(255, 255, 255, 0.45); /* Semi-transparent white card */
-  --bg-card-hover: rgba(255, 255, 255, 0.6);
-  --border-color: rgba(255, 255, 255, 0.5); /* Crisp light border on top of glass */
-  --border-color-hover: rgba(255, 255, 255, 0.8);
+  /* Light Mode (Premium Linen / Cloud Palette) */
+  --bg-main: hsl(60, 3%, 94%);        /* Warm light linen background */
+  --bg-card: rgba(250, 250, 248, 0.55); /* Transparent linen card */
+  --bg-card-hover: rgba(250, 250, 248, 0.75);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-color-hover: rgba(0, 0, 0, 0.15);
   
   /* Glowing Blobs Colors (Soft Warm & Cool Blend) */
   --blob-color-1: #ff9ebb;   /* Soft Red/Pink */
@@ -18,9 +18,9 @@
   --blob-color-3: #d8b4fe;   /* Soft Purple */
   --blob-color-4: #fef08a;   /* Soft Yellow */
   
-  --color-blue: #0071e3;      /* Apple Blue Accent */
-  --color-blue-hover: #0056b3;
-  --color-blue-glow: rgba(0, 113, 227, 0.15);
+  --color-orange: #ff9500;    /* Vibrant Orange Accent */
+  --color-orange-hover: #e07b00;
+  --color-orange-glow: rgba(255, 149, 0, 0.15);
   
   --color-red: #ff3b30;       /* Accent Red */
   --color-red-hover: #d7261e;
@@ -29,10 +29,10 @@
   --color-success: #34c759;
   --color-danger: #ff3b30;
   
-  --text-main: #1d1d1f;       /* Apple dark gray (almost black) */
-  --text-muted: #6e6e73;      /* Apple mid gray */
+  --text-main: #1c1c1b;       /* Dark charcoal */
+  --text-muted: #787870;      /* Muted charcoal/linen-gray */
   --text-inverse: #ffffff;
-
+ 
   --slider-track-bg: rgba(0, 0, 0, 0.08);
   --tab-nav-bg: rgba(0, 0, 0, 0.04);
   --tab-btn-active-bg: rgba(255, 255, 255, 0.7);
@@ -45,11 +45,11 @@
 }
 
 .dark-mode {
-  /* Dark Mode Variables */
-  --bg-main: #090d16;        /* Deep dark slate space background */
-  --bg-card: rgba(17, 25, 40, 0.5); /* Semi-transparent dark card */
-  --bg-card-hover: rgba(17, 25, 40, 0.65);
-  --border-color: rgba(255, 255, 255, 0.08); /* Semi-transparent light border */
+  /* Dark Mode Variables (Premium Titanium Palette) */
+  --bg-main: hsl(60, 2%, 8%);        /* Deep Titanium dark background */
+  --bg-card: rgba(26, 26, 25, 0.55);   /* Semi-transparent dark titanium card */
+  --bg-card-hover: rgba(26, 26, 25, 0.75);
+  --border-color: rgba(255, 255, 255, 0.08);
   --border-color-hover: rgba(255, 255, 255, 0.15);
   
   /* Glowing Blobs Colors (Slightly more vibrant for dark background) */
@@ -58,9 +58,9 @@
   --blob-color-3: #3b0764;   /* Deep Purple */
   --blob-color-4: #064e3b;   /* Deep Teal/Green */
   
-  --color-blue: #2f80ed;      /* Brighter Blue */
-  --color-blue-hover: #1b6fd1;
-  --color-blue-glow: rgba(47, 128, 237, 0.25);
+  --color-orange: #ff9f0a;    /* Vibrant Orange Accent (Dark Mode) */
+  --color-orange-hover: #f58700;
+  --color-orange-glow: rgba(255, 159, 10, 0.25);
   
   --color-red: #ff453a;       /* iOS Dark Mode Red */
   --color-red-hover: #e03e34;
@@ -69,9 +69,9 @@
   --color-success: #30d158;
   --color-danger: #ff453a;
   
-  --text-main: #f5f5f7;       /* Off-white text */
-  --text-muted: #86868b;      /* Apple gray */
-  --text-inverse: #090d16;
+  --text-main: #f5f5f4;       /* Titanium light gray */
+  --text-muted: #a1a19a;      /* Titanium muted gray */
+  --text-inverse: hsl(60, 2%, 8%);
   
   --slider-track-bg: rgba(255, 255, 255, 0.12);
   --tab-nav-bg: rgba(255, 255, 255, 0.04);
@@ -210,7 +210,7 @@ body {
 }
 
 .brand h1 span {
-  color: var(--color-blue);
+  color: var(--color-orange);
 }
 
 .header-controls {
@@ -246,8 +246,8 @@ body {
 
 .btn-theme-toggle:hover {
   transform: scale(1.08) translateY(-1px);
-  border-color: var(--color-blue);
-  box-shadow: 0 6px 16px var(--color-blue-glow);
+  border-color: var(--color-orange);
+  box-shadow: 0 6px 16px var(--color-orange-glow);
 }
 
 .bridge-status {
@@ -338,7 +338,7 @@ body {
 }
 
 .tab-btn.active {
-  color: var(--color-blue);
+  color: var(--color-orange);
   background: var(--tab-btn-active-bg);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
@@ -412,6 +412,7 @@ body {
   position: relative;
 }
 
+/* Card Header Styles */
 .speaker-card-header {
   display: flex;
   justify-content: space-between;
@@ -419,10 +420,10 @@ body {
   gap: 1rem;
 }
 
-.speaker-info {
+.speaker-title-area {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  align-items: center;
+  gap: 0.5rem;
   min-width: 0;
 }
 
@@ -436,58 +437,307 @@ body {
   color: var(--text-main);
 }
 
-.speaker-ip {
-  font-size: 0.85rem;
+.btn-info-toggle {
+  background: transparent;
+  border: none;
   color: var(--text-muted);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-/* Play/Pause Circle Highlight Switcher */
-.btn-play-pause-circle {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: var(--text-main);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   transition: var(--transition-smooth);
+  outline: none;
   flex-shrink: 0;
+}
+
+/* Battery Badge Styles */
+.battery-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.dark-mode .battery-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.battery-badge .material-symbols-outlined {
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.battery-badge.charging {
+  color: #4cd964; /* Green charging color */
+  background: rgba(76, 217, 100, 0.12);
+  border-color: rgba(76, 217, 100, 0.2);
+}
+
+.battery-badge.low:not(.charging) {
+  color: #ff3b30; /* Red low battery color */
+  background: rgba(255, 59, 48, 0.12);
+  border-color: rgba(255, 59, 48, 0.2);
+}
+
+.btn-info-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: var(--color-orange);
+}
+
+.dark-mode .btn-info-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-orange);
+}
+
+.btn-info-toggle .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.speaker-ip-badge {
+  position: absolute;
+  top: 4.5rem;
+  left: 1.5rem;
+  right: 1.5rem;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: translateY(-5px);
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.dark-mode .speaker-ip-badge {
+  background: rgba(26, 26, 25, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.speaker-ip-badge.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  font-size: 0.825rem;
+  line-height: 1.4;
+}
+
+.info-row:not(:last-child) {
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.info-row strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.info-row span {
+  color: var(--text-muted);
+  font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+  font-size: 0.8rem;
+}
+
+/* Premium Square Album Art Section */
+.artwork-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+.artwork-container {
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background: rgba(120, 120, 120, 0.05);
+}
+
+.dark-mode .artwork-container {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.artwork-container:hover {
+  transform: scale(1.03);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .artwork-container:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+.speaker-artwork {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Track Metadata Section */
+.track-info-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.25rem;
+  padding: 0 0.5rem;
+  min-height: 52px; /* Prevent card layout shift between blank and active states */
+  justify-content: center;
+}
+
+.track-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  letter-spacing: -0.01em;
+}
+
+.track-artist {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* Horizontal Player Controls Section */
+.media-controls-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.25rem 0;
+}
+
+.control-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+  outline: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+}
+
+.control-btn:hover {
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark-mode .control-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.control-btn .material-symbols-outlined {
+  font-size: 1.5rem;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.control-btn.active {
+  color: var(--color-orange);
+}
+
+.dark-mode .control-btn.active {
+  color: var(--color-orange);
+}
+
+.control-btn.active .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Prominent Play/Pause button styling */
+.btn-play-pause-circle {
+  width: 52px !important;
+  height: 52px !important;
+  background: rgba(255, 255, 255, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  color: var(--text-main) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .dark-mode .btn-play-pause-circle {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .btn-play-pause-circle:hover {
   transform: scale(1.08) translateY(-1px);
-  background: rgba(255, 255, 255, 0.4);
-  border-color: var(--color-blue);
-  color: var(--color-blue);
-  box-shadow: 0 6px 16px var(--color-blue-glow);
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: var(--color-orange) !important;
+  color: var(--color-orange) !important;
+  box-shadow: 0 6px 16px var(--color-orange-glow);
+}
+
+.dark-mode .btn-play-pause-circle:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: var(--color-orange) !important;
+  border-color: var(--color-orange) !important;
+  box-shadow: 0 6px 16px var(--color-orange-glow);
 }
 
 .btn-play-pause-circle.playing {
-  background: linear-gradient(135deg, var(--color-blue), #0052cc);
-  border-color: transparent;
-  color: #ffffff;
-  box-shadow: 0 6px 20px var(--color-blue-glow);
+  background: linear-gradient(135deg, var(--color-orange), #ff5e00) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px var(--color-orange-glow);
+}
+
+.dark-mode .btn-play-pause-circle.playing {
+  background: linear-gradient(135deg, #ff5e00, var(--color-orange)) !important;
+  box-shadow: 0 6px 20px rgba(255, 159, 10, 0.4);
 }
 
 .btn-play-pause-circle.playing:hover {
-  background: linear-gradient(135deg, var(--color-blue-hover), #003db3);
-  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.4);
+  background: linear-gradient(135deg, var(--color-orange-hover), #e65100) !important;
+  box-shadow: 0 8px 24px rgba(255, 149, 0, 0.4);
 }
 
 /* ==========================================================================
-   Volume Slider (Dynamic Gradient Fill, Blue Highlight)
+   Volume Slider (Dynamic Gradient Fill, Orange Highlight)
    ========================================================================== */
 
 .speaker-volume-section {
@@ -505,7 +755,7 @@ body {
 }
 
 .volume-val {
-  color: var(--color-blue);
+  color: var(--color-orange);
   font-weight: 700;
 }
 
@@ -527,7 +777,7 @@ body {
   -webkit-appearance: none;
   appearance: none;
   /* Progress fill effect via linear gradient */
-  background: linear-gradient(to right, var(--color-blue) 0%, var(--color-blue) var(--value, 0%), var(--slider-track-bg) var(--value, 0%), var(--slider-track-bg) 100%);
+  background: linear-gradient(to right, var(--color-orange) 0%, var(--color-orange) var(--value, 0%), var(--slider-track-bg) var(--value, 0%), var(--slider-track-bg) 100%);
   height: 10px;
   border-radius: 5px;
   outline: none;
@@ -546,7 +796,7 @@ body {
   height: 20px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2px solid var(--color-blue);
+  border: 2px solid var(--color-orange);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -554,13 +804,13 @@ body {
 
 .volume-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-  background: var(--color-blue);
+  background: var(--color-orange);
   border-color: #ffffff;
-  box-shadow: 0 4px 12px var(--color-blue-glow);
+  box-shadow: 0 4px 12px var(--color-orange-glow);
 }
 
 /* ==========================================================================
-   Dropdown Wrapper & Cards Footer (Red/Blue Integration)
+   Dropdown Wrapper & Cards Footer (Red/Orange Integration)
    ========================================================================== */
 
 .speaker-card-footer {
@@ -611,7 +861,7 @@ body {
 }
 
 .favorites-dropdown:hover {
-  border-color: var(--color-blue);
+  border-color: var(--color-orange);
   background-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -626,7 +876,7 @@ body {
 }
 
 /* ==========================================================================
-   Buttons (14px Rounding, Red/Blue highlights)
+   Buttons (14px Rounding, Red/Orange highlights)
    ========================================================================== */
 
 .btn {
@@ -645,16 +895,16 @@ body {
   outline: none;
 }
 
-/* Primary buttons use Blue Highlight */
+/* Primary buttons use Orange Highlight */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-blue), #0052cc);
+  background: linear-gradient(135deg, var(--color-orange), #ff5e00);
   color: #ffffff;
-  box-shadow: 0 6px 20px var(--color-blue-glow);
+  box-shadow: 0 6px 20px var(--color-orange-glow);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--color-blue-hover), #003db3);
-  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.35);
+  background: linear-gradient(135deg, var(--color-orange-hover), #e65100);
+  box-shadow: 0 8px 24px rgba(255, 149, 0, 0.35);
   transform: translateY(-2px);
 }
 
@@ -674,7 +924,7 @@ body {
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.4);
-  border-color: var(--color-blue);
+  border-color: var(--color-orange);
   transform: translateY(-2px);
 }
 
@@ -788,9 +1038,9 @@ body {
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: var(--color-blue);
+  border-color: var(--color-orange);
   background: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 0 0 3px var(--color-blue-glow);
+  box-shadow: 0 0 0 3px var(--color-orange-glow);
 }
 
 .dark-mode .form-group input:focus,
@@ -963,7 +1213,7 @@ body {
 }
 
 .toast.success {
-  border-left: 4px solid var(--color-blue);
+  border-left: 4px solid var(--color-orange);
 }
 
 .toast.error {
@@ -1026,7 +1276,7 @@ body {
 }
 
 .api-endpoint-card:hover {
-  border-color: var(--color-blue);
+  border-color: var(--color-orange);
   box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.07);
 }
 
@@ -1042,8 +1292,8 @@ body {
 }
 
 .method {
-  background: rgba(0, 113, 227, 0.12); /* Blue badge tint */
-  color: var(--color-blue);
+  background: rgba(255, 149, 0, 0.12); /* Orange badge tint */
+  color: var(--color-orange);
   padding: 0.25rem 0.65rem;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -1071,7 +1321,7 @@ body {
   padding: 0.85rem 1.15rem;
   font-size: 0.875rem;
   color: var(--text-muted);
-  border-left: 4px solid var(--color-blue);
+  border-left: 4px solid var(--color-orange);
   line-height: 1.4;
   transition: background-color 0.4s ease;
 }
@@ -1087,7 +1337,7 @@ body {
 
 .endpoint-example code {
   font-family: 'Courier New', Courier, monospace;
-  color: var(--color-blue);
+  color: var(--color-orange);
   word-break: break-all;
   font-weight: 600;
 }
@@ -1120,6 +1370,99 @@ body {
   padding-top: 1.5rem;
   margin-top: auto;
   font-weight: 600;
+}
+
+/* ==========================================================================
+   System Log Console & Danger Buttons
+   ========================================================================== */
+
+.console-card {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.console-intro {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.log-console-pre {
+  background: #0b0e14;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1.25rem;
+  height: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #e5e5e0;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .log-console-pre {
+  background: #05070a;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.log-console-pre span {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.log-info {
+  color: #e5e5e0;
+}
+
+.log-warn {
+  color: #ffb340;
+  font-weight: 500;
+}
+
+.log-error {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.console-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-start;
+  margin-top: 0.25rem;
+}
+
+/* Danger Button highlighted in Red (similar to TTS and primary styles) */
+.btn-danger {
+  background: linear-gradient(135deg, var(--color-red), #e0241b);
+  color: #ffffff;
+  box-shadow: 0 6px 20px var(--color-red-glow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 16px;
+  font-family: var(--font-family);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  border: none;
+  outline: none;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, var(--color-red-hover), #b8140c);
+  box-shadow: 0 8px 24px rgba(255, 59, 48, 0.35);
+  transform: translateY(-2px);
 }
 
 /* ==========================================================================

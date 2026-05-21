@@ -18,10 +18,13 @@ Dieses Projekt dient als moderner Ersatz für die veraltete `node-sonos-http-api
   - Spielt Ansagen über die Sonos-Funktion `PlayNotification()`. Dadurch wird der vorherige Wiedergabezustand (Warteschlange, Track-Position, Lautstärke) nach Ende der Durchsage automatisch wiederhergestellt.
   - Automatischer Cleanup-Job zur Bereinigung temporärer Sprachdateien.
 - **Premium Web-Dashboard**:
-  - Live-Übersicht aller Sonos-Räume und Zustände.
-  - Steuerung (Play/Pause, Lautstärke-Slider, Favoriten-Auswahl).
-  - Komfortables TTS-Einspracherichtungs-Modal für manuelle Ansagen.
-  - Integriertes Einstellungs-Panel (Port, Loxone IP/Port, TTS-Sprache, Statische IPs, Raum-Aliases).
+  - **Neues Apple Glassmorphism-Design**: Minimalistischer, moderner Look mit flüssig animierten Hintergrund-Blobs und responsivem Spalten-Layout in hellen (Linen) und dunklen (Titanium) Themes. Kräftige orange Highlights runden das Premium-Gefühl ab.
+  - **Zentrierte Player-Cards**: Fokus auf das Album-Artwork (Quadratische 1:1 Ansicht) mit eleganten Hover-Effekten und integrierten Titel- und Interpreten-Infos.
+  - **Erweiterte Steuerung**: Direktes Toggling von Wiedergabemodi (Zufallswiedergabe (Shuffle), Wiederholen (Repeat)) sowie Vorwärts- und Rückwärts-Titelsteuerung (Next / Previous).
+  - **Diagnose-Overlay**: Ein Klick auf das Info-Symbol zeigt dynamisch geladene Hardware-Diagnosedaten des Lautsprechers (Modellname, Seriennummer, Softwareversion, MAC-Adresse) ohne Layout-Verschiebung an.
+  - **System-Protokoll (Log-Konsole)**: Ein interaktives Terminal im Einstellungsmenü spiegelt in Echtzeit Server-Protokolle wider (inklusive farblicher Hervorhebung für Warnungen/Fehler, Kopier- und Löschfunktion).
+- **Audio- & Stream-Fallbacks**: Automatisches Laden und Abspielen des ersten Favoriten oder Umschalten auf die Warteschlange bei leeren Medienregistern (Behebung von `UPnPError 701`).
+- **Lokaler Album-Art Proxy**: Der integrierte Endpunkt `/api/art` holt Cover-Bilder von den Lautsprechern im LAN und streamt sie sicher zum Browser, um CORS- und Netzwerk-Zugriffsbeschränkungen zu umgehen.
 - **Einfache Loxone-Integration**: Generiert vollautomatisch eine passende XML-Importvorlage für virtuelle Loxone-UDP-Eingangsbefehle.
 
 ---
@@ -112,10 +115,30 @@ Spielt einen in der Sonos-App hinterlegten Favoriten (Radio-Sender, Playlist etc
 - **Beispiel**: `http://192.168.1.100:8888/wohnzimmer/favorite/wdr2`
 
 ### 5. Sprachansage (TTS) ausgeben
-Generiert eine Sprachansage im MP3-Format, senkt/erhöht die Lautstärke für die Ansage auf den angegebenen Wert und setzt die Wiedergabe anschließend fort.
 - **Methode**: `GET`
 - **Pfad**: `/:raum/say/:text/:volume?`
 - **Beispiel (mit Lautstärke 40 %)**: `http://192.168.1.100:8888/wohnzimmer/say/Die Waschmaschine ist fertig/40`
+
+### 6. Zusätzliche API-Endpunkte (für UI & Integration)
+
+Neben den einfachen HTTP-GET-Abkürzungen für Loxone bietet die Brücke eine strukturierte REST-API:
+
+- **Wiedergabe-Steuerung (`POST /api/control`)**:
+  - Ermöglicht eine flexible Steuerung im JSON-Format.
+  - **Payload**: `{ "room": "wohnzimmer", "action": "<action>", "value": "<wert>" }`
+  - **Unterstützte Aktionen**:
+    - `play`, `pause`, `next`, `previous`
+    - `volume` (Wert: 0-100)
+    - `favorite` (Wert: Favoritenname)
+    - `playmode` (Wert: `NORMAL`, `SHUFFLE`, `REPEAT_ALL`, `REPEAT_ONE`)
+    - `say` (Wert: Text oder Objekt `{ "text": "...", "volume": 40 }`)
+- **System-Logs abrufen (`GET /api/logs`)**:
+  - Liefert die letzten 100 Zeilen der Konsolenprotokolle des Servers.
+- **System-Logs leeren (`POST /api/logs/clear`)**:
+  - Leert den internen Log-Puffer auf dem Server.
+- **Album-Art Proxy (`GET /api/art`)**:
+  - Holt das Cover-Bild direkt von einem Sonos-Lautsprecher und streamt es an den Client (bypasst private Netzwerkrestriktionen).
+  - **Parameter**: `?ip=<speaker_ip>&path=<relative_art_path>`
 
 ---
 
@@ -142,7 +165,7 @@ Um den Einrichtungsaufwand in Loxone zu minimieren:
 
 ## Konfiguration (`settings.json`)
 
-Sämtliche Einstellungen werden im Web-UI vorgenommen und in der Datei `config/settings.json` persistiert. Ein manuelles Editieren ist in der Regel nicht erforderlich.
+Sämtliche Einstellungen werden im Web-UI vorgenommen und in der Datei `config/settings.json` persistiert. Ein manuelles Editieren ist in der Regel nicht erforderlich. Eine Vorlage der Konfiguration ist als `config/settings.json.example` im Repository hinterlegt. Kopieren Sie diese vor dem ersten Start und passen Sie sie nach Bedarf an.
 
 Struktur der Konfigurationsdatei:
 ```json

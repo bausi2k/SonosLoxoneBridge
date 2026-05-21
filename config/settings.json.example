@@ -1,0 +1,8 @@
+{
+  "port": 8888,
+  "loxoneIp": "192.168.1.99",
+  "loxonePort": 7777,
+  "ttsLanguage": "de",
+  "staticSpeakerIps": [],
+  "roomAliases": {}
+}

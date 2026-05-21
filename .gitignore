@@ -22,3 +22,6 @@ Thumbs.db
 # Examples folder
 examples/
 
+# Local scratch directory
+scratch/
+

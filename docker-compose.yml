@@ -13,3 +13,5 @@ services:
       - ./config:/app/config
     environment:
       - NODE_ENV=production
+      # Port für den internen Sonos-UPnP-Event-Listener. Ändern, falls 6329 auf dem NAS bereits belegt ist.
+      - SONOS_LISTENER_PORT=6330

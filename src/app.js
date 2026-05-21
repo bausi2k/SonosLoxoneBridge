@@ -1,5 +1,42 @@
+const maxLogLines = 100;
+global.bridgeLogs = global.bridgeLogs || [];
+
+const originalLog = console.log;
+const originalError = console.error;
+const originalWarn = console.warn;
+
+function formatLogLine(type, args) {
+  const timestamp = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const message = args.map(arg => {
+    if (arg instanceof Error) {
+      return arg.message + (arg.stack ? '\n' + arg.stack : '');
+    }
+    return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
+  }).join(' ');
+  return `[${timestamp}] [${type}] ${message}`;
+}
+
+console.log = function(...args) {
+  originalLog.apply(console, args);
+  global.bridgeLogs.push(formatLogLine('INFO', args));
+  if (global.bridgeLogs.length > maxLogLines) global.bridgeLogs.shift();
+};
+
+console.error = function(...args) {
+  originalError.apply(console, args);
+  global.bridgeLogs.push(formatLogLine('ERROR', args));
+  if (global.bridgeLogs.length > maxLogLines) global.bridgeLogs.shift();
+};
+
+console.warn = function(...args) {
+  originalWarn.apply(console, args);
+  global.bridgeLogs.push(formatLogLine('WARN', args));
+  if (global.bridgeLogs.length > maxLogLines) global.bridgeLogs.shift();
+};
+
 const express = require('express');
 const path = require('path');
+const http = require('http');
 const { getSettings, saveSettings } = require('./settings');
 const { 
   initializeSonos, 
@@ -10,7 +47,11 @@ const {
   sayRoom, 
   getRoomStates, 
   getFavorites,
-  getLocalIp
+  getLocalIp,
+  formatError,
+  nextTrack,
+  previousTrack,
+  setRoomPlayMode
 } = require('./sonos');
 const { generateLoxoneXml } = require('./loxone');
 const { cleanupTts } = require('./tts');
@@ -105,6 +146,51 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// GET /api/art
+app.get('/api/art', (req, res) => {
+  const { ip, path: artPath } = req.query;
+
+  if (!ip || !artPath) {
+    return res.status(400).json({ success: false, error: 'ip and path query parameters are required' });
+  }
+
+  // Validate that the IP belongs to a known speaker to prevent SSRF
+  const rooms = getRoomStates();
+  const validIps = rooms.map(r => r.ip);
+  if (!validIps.includes(ip)) {
+    return res.status(403).json({ success: false, error: 'Unauthorized speaker IP address' });
+  }
+
+  // Ensure path starts with '/' and does not contain directory traversal attempts
+  if (!artPath.startsWith('/') || artPath.includes('..')) {
+    return res.status(400).json({ success: false, error: 'Invalid path' });
+  }
+
+  const targetUrl = `http://${ip}:1400${artPath}`;
+
+  const proxyReq = http.get(targetUrl, (proxyRes) => {
+    // Copy headers from Sonos speaker response
+    if (proxyRes.headers['content-type']) {
+      res.setHeader('content-type', proxyRes.headers['content-type']);
+    }
+    if (proxyRes.headers['content-length']) {
+      res.setHeader('content-length', proxyRes.headers['content-length']);
+    }
+    if (proxyRes.headers['cache-control']) {
+      res.setHeader('cache-control', proxyRes.headers['cache-control']);
+    } else {
+      res.setHeader('cache-control', 'public, max-age=3600');
+    }
+    res.statusCode = proxyRes.statusCode;
+    proxyRes.pipe(res);
+  });
+
+  proxyReq.on('error', (err) => {
+    console.error(`[Bridge Art Proxy Error] Failed to fetch artwork from ${targetUrl}:`, err.message);
+    res.status(502).json({ success: false, error: `Failed to proxy artwork: ${err.message}` });
+  });
+});
+
 // GET /api/favorites/:room
 app.get('/api/favorites/:room', async (req, res) => {
   const { room } = req.params;
@@ -112,7 +198,9 @@ app.get('/api/favorites/:room', async (req, res) => {
     const favorites = await getFavorites(room);
     res.json({ success: true, favorites });
   } catch (err) {
-    res.status(404).json({ success: false, error: err.message });
+    const details = formatError(err);
+    console.error('[Bridge Favorites API Error]:', details);
+    res.status(404).json({ success: false, error: err.message, details });
   }
 });
 
@@ -151,12 +239,26 @@ app.post('/api/control', async (req, res) => {
         }
         message = `Triggered announcement in "${room}"`;
         break;
+      case 'next':
+        await nextTrack(room);
+        message = `Skipped to next track in "${room}"`;
+        break;
+      case 'previous':
+        await previousTrack(room);
+        message = `Skipped to previous track in "${room}"`;
+        break;
+      case 'playmode':
+        await setRoomPlayMode(room, value);
+        message = `Set playmode in "${room}" to ${value}`;
+        break;
       default:
         return res.status(400).json({ success: false, error: `Unknown action "${action}"` });
     }
     res.json({ success: true, message });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    const details = formatError(err);
+    console.error('[Bridge Control API Error]:', details);
+    res.status(500).json({ success: false, error: err.message, details });
   }
 });
 
@@ -198,8 +300,22 @@ app.post('/api/discover', async (req, res) => {
     await initializeSonos();
     res.json({ success: true, message: 'Sonos discovery completed' });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    const details = formatError(err);
+    console.error('[Bridge Discover API Error]:', details);
+    res.status(500).json({ success: false, error: err.message, details });
   }
+});
+
+// GET /api/logs
+app.get('/api/logs', (req, res) => {
+  res.json({ success: true, logs: global.bridgeLogs || [] });
+});
+
+// POST /api/logs/clear
+app.post('/api/logs/clear', (req, res) => {
+  global.bridgeLogs = [];
+  console.log('[Bridge] System-Protokoll gelöscht.');
+  res.json({ success: true, message: 'Logs cleared successfully' });
 });
 
 

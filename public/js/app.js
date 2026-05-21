@@ -28,10 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentTheme = localStorage.getItem('theme') || 'light';
   if (currentTheme === 'dark') {
     document.body.classList.add('dark-mode');
-    if (themeIcon) themeIcon.textContent = '☀️';
+    if (themeIcon) themeIcon.innerHTML = '<span class="material-symbols-outlined">light_mode</span>';
   } else {
     document.body.classList.remove('dark-mode');
-    if (themeIcon) themeIcon.textContent = '🌙';
+    if (themeIcon) themeIcon.innerHTML = '<span class="material-symbols-outlined">dark_mode</span>';
   }
 
   if (themeToggle) {
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.toggle('dark-mode');
       const isDark = document.body.classList.contains('dark-mode');
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      if (themeIcon) themeIcon.textContent = isDark ? '☀️' : '🌙';
+      if (themeIcon) themeIcon.innerHTML = isDark ? '<span class="material-symbols-outlined">light_mode</span>' : '<span class="material-symbols-outlined">dark_mode</span>';
     });
   }
 
@@ -52,6 +52,113 @@ document.addEventListener('DOMContentLoaded', () => {
   const ttsVolume = document.getElementById('tts-volume');
   const ttsVolumeValue = document.getElementById('tts-volume-value');
   const modalRoomName = document.getElementById('modal-room-name');
+
+  // Log Console Elements
+  const logConsole = document.getElementById('log-console');
+  const btnCopyLogs = document.getElementById('btn-copy-logs');
+  const btnClearLogs = document.getElementById('btn-clear-logs');
+  let logPollInterval = null;
+
+  // Fetch bridge logs
+  async function fetchLogs() {
+    const settingsTab = document.getElementById('tab-settings');
+    if (!settingsTab || settingsTab.classList.contains('hidden')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/logs');
+      const data = await response.json();
+      if (data.success && data.logs) {
+        renderLogs(data.logs);
+      }
+    } catch (err) {
+      console.error('[Bridge Log Error] Failed to fetch logs:', err);
+    }
+  }
+
+  // Render logs in the console
+  function renderLogs(logs) {
+    if (!logConsole) return;
+    
+    let html = '';
+    logs.forEach(line => {
+      let cssClass = 'log-info';
+      if (line.includes('[WARN]')) {
+        cssClass = 'log-warn';
+      } else if (line.includes('[ERROR]')) {
+        cssClass = 'log-error';
+      }
+      html += `<span class="${cssClass}">${escapeHtml(line)}\n</span>`;
+    });
+    
+    const isAtBottom = logConsole.scrollHeight - logConsole.clientHeight <= logConsole.scrollTop + 50;
+    
+    logConsole.innerHTML = html;
+    
+    if (isAtBottom || logConsole.scrollTop === 0) {
+      logConsole.scrollTop = logConsole.scrollHeight;
+    }
+  }
+
+  // Copy logs to clipboard
+  if (btnCopyLogs) {
+    btnCopyLogs.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!logConsole) return;
+      
+      const textToCopy = logConsole.textContent;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(textToCopy);
+        } else {
+          // Fallback for non-secure HTTP contexts (e.g. running on local IP)
+          const textArea = document.createElement('textarea');
+          textArea.value = textToCopy;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-999999px';
+          textArea.style.top = '-999999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textArea);
+          if (!successful) {
+            throw new Error('execCommand copy failed');
+          }
+        }
+        showToast('System-Protokoll in Zwischenablage kopiert');
+      } catch (err) {
+        showToast('Kopieren fehlgeschlagen', 'error');
+        console.error('[Bridge Log Copy Error] Clipboard write failed:', err);
+      }
+    });
+  }
+
+  // Clear logs in backend and frontend
+  if (btnClearLogs) {
+    btnClearLogs.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!confirm('Möchten Sie das System-Protokoll wirklich leeren?')) {
+        return;
+      }
+      try {
+        const response = await fetch('/api/logs/clear', {
+          method: 'POST'
+        });
+        const data = await response.json();
+        if (data.success) {
+          if (logConsole) logConsole.innerHTML = '';
+          showToast('System-Protokoll gelöscht');
+        } else {
+          showToast('Leeren fehlgeschlagen', 'error');
+        }
+      } catch (err) {
+        showToast('Netzwerkfehler beim Leeren der Logs', 'error');
+        console.error('[Bridge Log Clear Error] API clear request failed:', err);
+      }
+    });
+  }
 
   // Tab Switching Functionality
   function switchTab(tabId) {
@@ -74,6 +181,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     localStorage.setItem('activeTab', tabId);
+
+    // Manage log polling interval dynamically based on active tab
+    if (tabId === 'settings') {
+      fetchLogs();
+      if (!logPollInterval) {
+        logPollInterval = setInterval(fetchLogs, 3000);
+      }
+    } else {
+      if (logPollInterval) {
+        clearInterval(logPollInterval);
+        logPollInterval = null;
+      }
+    }
   }
 
   // Bind click handlers to tab buttons
@@ -92,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // App State
   let currentRooms = [];
   let roomFavorites = {}; // Cached favorites: { roomName: [favorites] }
+  const showIpRooms = {}; // Track which speaker IPs are displayed
   let activeTtsRoom = '';
   let pollInterval = null;
   const isDraggingVolume = {}; // Track which sliders are being dragged: { roomName: boolean }
@@ -182,10 +303,110 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         roomFavorites[roomName] = data.favorites || [];
         updateFavoritesDropdown(roomName);
+      } else {
+        console.error(`Could not load favorites for room "${roomName}":`, data);
       }
     } catch (err) {
-      console.warn(`Could not load favorites for room "${roomName}":`, err.message);
+      console.warn(`Could not load favorites for room "${roomName}":`, err);
     }
+  }
+
+  // Helper to format now playing track details
+  function getTrackDetails(room) {
+    let title = 'Inaktiv';
+    let artist = '';
+    
+    if (room.isPlaying) {
+      title = 'Wiedergabe aktiv';
+    }
+    
+    if (room.currentTrack) {
+      const track = room.currentTrack;
+      if (track.streamContent) {
+        title = track.streamContent;
+        artist = 'Live Stream';
+      } else if (track.title) {
+        title = track.title;
+        artist = track.artist || '';
+      }
+    }
+    
+    return { title, artist };
+  }
+
+  // Get formatted album art URL (handling local Sonos vs external URLs)
+  function getAlbumArtUrl(room) {
+    if (room.currentTrack) {
+      let art = room.currentTrack.albumArt;
+      
+      // If we don't have art, look in favorites
+      if (!art && roomFavorites[room.name]) {
+        const title = (room.currentTrack.title || '').toLowerCase().trim();
+        const streamContent = (room.currentTrack.streamContent || '').toLowerCase().trim();
+        
+        if (title || streamContent) {
+          const matchedFav = roomFavorites[room.name].find(fav => {
+            if (!fav.Title) return false;
+            const favTitle = fav.Title.toLowerCase().trim();
+            
+            // Check direct exact matches first
+            if (favTitle === title || favTitle === streamContent) {
+              return true;
+            }
+            // Check substring matches
+            if (title && (title.includes(favTitle) || favTitle.includes(title))) {
+              return true;
+            }
+            if (streamContent && (streamContent.includes(favTitle) || favTitle.includes(streamContent))) {
+              return true;
+            }
+            return false;
+          });
+          
+          if (matchedFav && matchedFav.TrackMetadata && matchedFav.TrackMetadata.AlbumArtUri) {
+            art = matchedFav.TrackMetadata.AlbumArtUri;
+          }
+        }
+      }
+
+      if (art) {
+        if (art.startsWith('http://') || art.startsWith('https://')) {
+          // Check if it is a Sonos absolute URL with port 1400
+          if (art.includes(':1400/')) {
+            try {
+              const urlObj = new URL(art);
+              const speakerIp = urlObj.hostname;
+              const pathAndQuery = urlObj.pathname + urlObj.search;
+              return `/api/art?ip=${encodeURIComponent(speakerIp)}&path=${encodeURIComponent(pathAndQuery)}`;
+            } catch (e) {
+              // Fallback
+            }
+          }
+          return art;
+        }
+        if (art.startsWith('/')) {
+          return `/api/art?ip=${encodeURIComponent(room.ip)}&path=${encodeURIComponent(art)}`;
+        }
+      }
+    }
+    return '';
+  }
+
+  // Get battery icon class name based on level and charging state
+  function getBatteryIcon(level, isCharging) {
+    if (isCharging) {
+      return 'battery_charging_full';
+    }
+    if (level === null || level === undefined) {
+      return 'battery_unknown';
+    }
+    if (level <= 10) return 'battery_alert';
+    if (level <= 20) return 'battery_1_bar';
+    if (level <= 40) return 'battery_2_bar';
+    if (level <= 60) return 'battery_3_bar';
+    if (level <= 80) return 'battery_4_bar';
+    if (level <= 95) return 'battery_5_bar';
+    return 'battery_full';
   }
 
   // Render speakers in grid
@@ -206,16 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadingState.remove();
     }
 
-    // Keep track of focused dropdowns to not disrupt user selection
-    const focusedDropdowns = {};
-    document.querySelectorAll('.favorites-dropdown').forEach(dropdown => {
-      if (document.activeElement === dropdown) {
-        const room = dropdown.getAttribute('data-room');
-        focusedDropdowns[room] = dropdown.value;
-      }
-    });
-
-    // We selectively update DOM elements to prevent flicker or slider reset during active dragging
+    // We selectively update DOM elements to prevent flicker, dropdown closing, or slider reset during active interaction
     currentRooms.forEach(room => {
       const cardId = `speaker-card-${normalizeSelector(room.name)}`;
       let card = document.getElementById(cardId);
@@ -224,71 +436,223 @@ document.addEventListener('DOMContentLoaded', () => {
       const dragging = isDraggingVolume[room.name];
 
       // Play/Pause icon/text
-      const playIcon = room.isPlaying ? '⏸️' : '▶️';
-      const playText = room.isPlaying ? 'Pause' : 'Play';
+      const playIcon = room.isPlaying ? 'pause' : 'play_arrow';
+      const playText = room.isPlaying ? 'Pause' : 'Abspielen';
       
       // Volume icon selection
-      let volIcon = '🔈';
-      if (room.volume > 66) volIcon = '🔊';
-      else if (room.volume > 33) volIcon = '🔉';
-      else if (room.volume > 0) volIcon = '🔈';
-      else volIcon = '🔇';
+      let volIcon = 'volume_mute';
+      if (room.volume > 66) volIcon = 'volume_up';
+      else if (room.volume > 33) volIcon = 'volume_down';
+      else if (room.volume > 0) volIcon = 'volume_mute';
+      else volIcon = 'volume_off';
+
+      const favoritesOptions = buildFavoritesOptions(room.name);
+      
+      const ipVisible = !!showIpRooms[room.name];
+      const trackDetails = getTrackDetails(room);
+      const artUrl = getAlbumArtUrl(room);
+      const resolvedArtUrl = artUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23888888" opacity="0.15"/><text x="50%" y="55%" font-size="60" text-anchor="middle">🎵</text></svg>';
+
+      // PlayMode evaluation
+      const pm = room.playMode || 'NORMAL';
+      const shuffleActive = pm.startsWith('SHUFFLE');
+      const repeatMode = pm === 'REPEAT_ONE' ? 'one' : (pm === 'REPEAT_ALL' || pm === 'SHUFFLE' ? 'all' : 'none');
+      const repeatIcon = repeatMode === 'one' ? 'repeat_one' : 'repeat';
 
       if (!card) {
         // Create new card
         card = document.createElement('div');
         card.id = cardId;
         card.className = 'glass-card speaker-card';
+        card.innerHTML = `
+          <div class="speaker-card-header">
+            <div class="speaker-title-area">
+              <span class="speaker-room">${escapeHtml(room.name)}</span>
+              <button class="btn-info-toggle" data-room="${escapeHtml(room.name)}" title="Details anzeigen">
+                <span class="material-symbols-outlined">info</span>
+              </button>
+              ${room.batteryLevel !== null ? `
+                <div class="battery-badge ${room.isCharging ? 'charging' : ''} ${room.batteryLevel <= 20 ? 'low' : ''}" title="${room.isCharging ? 'Wird geladen' : 'Batteriebetrieb'}: ${room.batteryLevel}%">
+                  <span class="material-symbols-outlined">${getBatteryIcon(room.batteryLevel, room.isCharging)}</span>
+                  <span>${room.batteryLevel}%</span>
+                </div>
+              ` : ''}
+            </div>
+            <div class="speaker-ip-badge ${ipVisible ? 'visible' : ''}" data-ip="${escapeHtml(room.ip)}" data-diag-loaded="${!!room.diagnostics}">
+              <div class="info-row"><strong>IP-Adresse:</strong> <span>${escapeHtml(room.ip)}</span></div>
+              ${room.diagnostics ? `
+                <div class="info-row"><strong>Modell:</strong> <span>${escapeHtml(room.diagnostics.modelName || 'Sonos-Lautsprecher')}</span></div>
+                <div class="info-row"><strong>Seriennummer:</strong> <span>${escapeHtml(room.diagnostics.serialNumber || '-')}</span></div>
+                <div class="info-row"><strong>Firmware:</strong> <span>${escapeHtml(room.diagnostics.displayVersion || room.diagnostics.softwareVersion || '-')}</span></div>
+                <div class="info-row"><strong>MAC-Adresse:</strong> <span>${escapeHtml(room.diagnostics.macAddress || '-')}</span></div>
+              ` : ''}
+            </div>
+          </div>
+          
+          <div class="artwork-section">
+            <div class="artwork-container">
+              <img class="speaker-artwork" src="${escapeHtml(resolvedArtUrl)}" alt="Album Art" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22 viewBox=%220 0 200 200%22><rect width=%22200%22 height=%22200%22 fill=%22%23888888%22 opacity=%220.15%22/><text x=%2250%%22 y=%2255%%22 font-size=%2260%22 text-anchor=%22middle%22>🎵</text></svg>'">
+            </div>
+          </div>
+
+          <div class="track-info-section">
+            <div class="track-title">${escapeHtml(trackDetails.title)}</div>
+            <div class="track-artist">${escapeHtml(trackDetails.artist)}</div>
+          </div>
+
+          <div class="media-controls-section">
+            <button class="control-btn btn-shuffle ${shuffleActive ? 'active' : ''}" data-room="${escapeHtml(room.name)}" data-playmode="${pm}" title="Zufallswiedergabe">
+              <span class="material-symbols-outlined">shuffle</span>
+            </button>
+            <button class="control-btn btn-prev" data-room="${escapeHtml(room.name)}" title="Vorheriger Titel">
+              <span class="material-symbols-outlined">skip_previous</span>
+            </button>
+            <button class="control-btn btn-play-pause-circle btn-play-pause ${room.isPlaying ? 'playing' : ''}" data-room="${escapeHtml(room.name)}" data-playing="${room.isPlaying}" title="${playText}">
+              <span class="material-symbols-outlined">${playIcon}</span>
+            </button>
+            <button class="control-btn btn-next" data-room="${escapeHtml(room.name)}" title="Nächster Titel">
+              <span class="material-symbols-outlined">skip_next</span>
+            </button>
+            <button class="control-btn btn-repeat ${repeatMode !== 'none' ? 'active' : ''}" data-room="${escapeHtml(room.name)}" data-playmode="${pm}" title="Wiederholung">
+              <span class="material-symbols-outlined">${repeatIcon}</span>
+            </button>
+          </div>
+
+          <div class="speaker-volume-section">
+            <div class="volume-labels">
+              <span>Lautstärke</span>
+              <span class="volume-val" id="volume-val-${normalizeSelector(room.name)}">${room.volume}%</span>
+            </div>
+            <div class="volume-slider-container">
+              <span class="volume-icon" id="volume-icon-${normalizeSelector(room.name)}"><span class="material-symbols-outlined">${volIcon}</span></span>
+              <input type="range" class="volume-slider" data-room="${escapeHtml(room.name)}" min="0" max="100" value="${room.volume}" style="--value: ${room.volume}%">
+            </div>
+          </div>
+
+          <div class="speaker-card-footer">
+            <div class="favorites-select-wrapper">
+              <select class="favorites-dropdown" data-room="${escapeHtml(room.name)}">
+                ${favoritesOptions}
+              </select>
+            </div>
+            <button class="btn btn-secondary btn-tts-modal btn-tts-trigger" title="Sprachansage (TTS)" data-room="${escapeHtml(room.name)}">
+              <span class="material-symbols-outlined btn-icon-symbol">record_voice_over</span> Ansage
+            </button>
+          </div>
+        `;
         speakersGrid.appendChild(card);
+      } else {
+        // Update existing card dynamically
+        const titleArea = card.querySelector('.speaker-title-area');
+        if (titleArea) {
+          let badge = titleArea.querySelector('.battery-badge');
+          if (room.batteryLevel !== null) {
+            const iconName = getBatteryIcon(room.batteryLevel, room.isCharging);
+            const titleStr = `${room.isCharging ? 'Wird geladen' : 'Batteriebetrieb'}: ${room.batteryLevel}%`;
+            
+            if (!badge) {
+              badge = document.createElement('div');
+              titleArea.appendChild(badge);
+            }
+            badge.className = `battery-badge ${room.isCharging ? 'charging' : ''} ${room.batteryLevel <= 20 ? 'low' : ''}`;
+            badge.title = titleStr;
+            badge.innerHTML = `
+              <span class="material-symbols-outlined">${iconName}</span>
+              <span>${room.batteryLevel}%</span>
+            `;
+          } else if (badge) {
+            badge.remove();
+          }
+        }
+
+        const playBtn = card.querySelector('.btn-play-pause');
+        if (playBtn) {
+          playBtn.className = `control-btn btn-play-pause-circle btn-play-pause ${room.isPlaying ? 'playing' : ''}`;
+          playBtn.title = playText;
+          playBtn.setAttribute('data-playing', room.isPlaying.toString());
+          playBtn.innerHTML = `<span class="material-symbols-outlined">${playIcon}</span>`;
+        }
+
+        const ipBadge = card.querySelector('.speaker-ip-badge');
+        if (ipBadge) {
+          ipBadge.className = `speaker-ip-badge ${ipVisible ? 'visible' : ''}`;
+          
+          let badgeContent = `<div class="info-row"><strong>IP-Adresse:</strong> <span>${escapeHtml(room.ip)}</span></div>`;
+          if (room.diagnostics) {
+            badgeContent += `
+              <div class="info-row"><strong>Modell:</strong> <span>${escapeHtml(room.diagnostics.modelName || 'Sonos-Lautsprecher')}</span></div>
+              <div class="info-row"><strong>Seriennummer:</strong> <span>${escapeHtml(room.diagnostics.serialNumber || '-')}</span></div>
+              <div class="info-row"><strong>Firmware:</strong> <span>${escapeHtml(room.diagnostics.displayVersion || room.diagnostics.softwareVersion || '-')}</span></div>
+              <div class="info-row"><strong>MAC-Adresse:</strong> <span>${escapeHtml(room.diagnostics.macAddress || '-')}</span></div>
+            `;
+          }
+          if (ipBadge.getAttribute('data-diag-loaded') !== (!!room.diagnostics).toString() || ipBadge.getAttribute('data-ip') !== room.ip) {
+            ipBadge.innerHTML = badgeContent;
+            ipBadge.setAttribute('data-diag-loaded', (!!room.diagnostics).toString());
+            ipBadge.setAttribute('data-ip', room.ip);
+          }
+        }
+
+        const artwork = card.querySelector('.speaker-artwork');
+        if (artwork && artwork.src !== resolvedArtUrl) {
+          artwork.src = resolvedArtUrl;
+        }
+
+        const titleEl = card.querySelector('.track-title');
+        if (titleEl && titleEl.textContent !== trackDetails.title) {
+          titleEl.textContent = trackDetails.title;
+        }
+
+        const artistEl = card.querySelector('.track-artist');
+        if (artistEl && artistEl.textContent !== trackDetails.artist) {
+          artistEl.textContent = trackDetails.artist;
+        }
+
+        const shuffleBtn = card.querySelector('.btn-shuffle');
+        if (shuffleBtn) {
+          shuffleBtn.setAttribute('data-playmode', pm);
+          shuffleBtn.className = `control-btn btn-shuffle ${shuffleActive ? 'active' : ''}`;
+        }
+
+        const repeatBtn = card.querySelector('.btn-repeat');
+        if (repeatBtn) {
+          repeatBtn.setAttribute('data-playmode', pm);
+          repeatBtn.className = `control-btn btn-repeat ${repeatMode !== 'none' ? 'active' : ''}`;
+          repeatBtn.innerHTML = `<span class="material-symbols-outlined">${repeatIcon}</span>`;
+        }
+
+        const valText = card.querySelector('.volume-val');
+        if (valText) {
+          valText.textContent = `${room.volume}%`;
+        }
+
+        const volIconEl = card.querySelector('.volume-icon');
+        if (volIconEl) {
+          volIconEl.innerHTML = `<span class="material-symbols-outlined">${volIcon}</span>`;
+        }
+
+        if (!dragging) {
+          const slider = card.querySelector('.volume-slider');
+          if (slider) {
+            slider.value = room.volume;
+            slider.style.setProperty('--value', room.volume + '%');
+          }
+        }
       }
-
-      // Update inner content, but preserve input values if user is interacting
-      const favoritesOptions = buildFavoritesOptions(room.name, focusedDropdowns[room.name]);
-
-      card.innerHTML = `
-        <div class="speaker-card-header">
-          <div class="speaker-info">
-            <span class="speaker-room">${escapeHtml(room.name)}</span>
-            <span class="speaker-ip">${escapeHtml(room.ip)}</span>
-          </div>
-          <button class="btn-play-pause-circle btn-play-pause ${room.isPlaying ? 'playing' : ''}" title="${playText}" data-room="${escapeHtml(room.name)}" data-playing="${room.isPlaying}">
-            ${playIcon}
-          </button>
-        </div>
-        <div class="speaker-volume-section">
-          <div class="volume-labels">
-            <span>Lautstärke</span>
-            <span class="volume-val" id="volume-val-${normalizeSelector(room.name)}">${room.volume}%</span>
-          </div>
-          <div class="volume-slider-container">
-            <span class="volume-icon" id="volume-icon-${normalizeSelector(room.name)}">${volIcon}</span>
-            <input type="range" class="volume-slider" data-room="${escapeHtml(room.name)}" min="0" max="100" value="${dragging ? card.querySelector('.volume-slider').value : room.volume}" style="--value: ${dragging ? card.querySelector('.volume-slider').value : room.volume}%">
-          </div>
-        </div>
-        <div class="speaker-card-footer">
-          <div class="favorites-select-wrapper">
-            <select class="favorites-dropdown" data-room="${escapeHtml(room.name)}">
-              ${favoritesOptions}
-            </select>
-          </div>
-          <button class="btn btn-secondary btn-tts-modal btn-tts-trigger" title="Sprachansage (TTS)" data-room="${escapeHtml(room.name)}">
-            📢 Ansage
-          </button>
-        </div>
-      `;
     });
 
     // Remove any card of a speaker that is no longer present
     const existingCards = speakersGrid.querySelectorAll('.speaker-card');
     existingCards.forEach(card => {
-      const roomAttr = card.querySelector('.btn-play-pause').getAttribute('data-room');
-      const stillExists = currentRooms.some(r => r.name === roomAttr);
-      if (!stillExists) {
-        card.remove();
+      const playBtn = card.querySelector('.btn-play-pause');
+      if (playBtn) {
+        const roomAttr = playBtn.getAttribute('data-room');
+        const stillExists = currentRooms.some(r => r.name === roomAttr);
+        if (!stillExists) {
+          card.remove();
+        }
       }
     });
-
-    bindCardEvents();
   }
 
   // Helper to build favorites option list
@@ -322,116 +686,280 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
       if (!data.success) {
         showToast(data.error || 'Fehler beim Einstellen der Lautstärke', 'error');
+        console.error('[Bridge Control Error] volume action failed:', data);
       }
     } catch (err) {
       showToast('Netzwerkfehler', 'error');
+      console.error('[Bridge Network Error] volume action fetch failed:', err);
     }
   }, 250);
 
-  // Bind interactive event listeners to card controls
-  function bindCardEvents() {
+  // Set up event delegation once on load
+  function setupEventDelegation() {
     // 1. Play / Pause Action
-    document.querySelectorAll('.btn-play-pause').forEach(btn => {
-      btn.onclick = async (e) => {
-        e.preventDefault();
-        const room = btn.getAttribute('data-room');
-        const isPlaying = btn.getAttribute('data-playing') === 'true';
-        const action = isPlaying ? 'pause' : 'play';
+    speakersGrid.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-play-pause');
+      if (!btn) return;
+      e.preventDefault();
+      
+      const room = btn.getAttribute('data-room');
+      const isPlaying = btn.getAttribute('data-playing') === 'true';
+      const action = isPlaying ? 'pause' : 'play';
 
-        // Optimistic UI update
-        btn.textContent = isPlaying ? '▶️' : '⏸️';
-        btn.setAttribute('data-playing', (!isPlaying).toString());
+      // Optimistic UI update
+      btn.innerHTML = `<span class="material-symbols-outlined">${isPlaying ? 'play_arrow' : 'pause'}</span>`;
+      btn.className = `control-btn btn-play-pause-circle btn-play-pause ${!isPlaying ? 'playing' : ''}`;
+      btn.setAttribute('data-playing', (!isPlaying).toString());
 
-        try {
-          const response = await fetch('/api/control', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ room, action })
-          });
-          const data = await response.json();
-          if (data.success) {
-            showToast(isPlaying ? `Wiedergabe in ${room} pausiert` : `Wiedergabe in ${room} gestartet`);
-            fetchStatus();
-          } else {
-            showToast(data.error || 'Aktion fehlgeschlagen', 'error');
-            fetchStatus();
-          }
-        } catch (err) {
-          showToast('Netzwerkfehler', 'error');
+      try {
+        const response = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room, action })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast(isPlaying ? `Wiedergabe in ${room} pausiert` : `Wiedergabe in ${room} gestartet`);
+          fetchStatus();
+        } else {
+          showToast(data.error || 'Aktion fehlgeschlagen', 'error');
+          console.error('[Bridge Control Error] play/pause action failed:', data);
           fetchStatus();
         }
-      };
+      } catch (err) {
+        showToast('Netzwerkfehler', 'error');
+        console.error('[Bridge Network Error] play/pause action fetch failed:', err);
+        fetchStatus();
+      }
     });
 
-    // 2. TTS Modal Opener
-    document.querySelectorAll('.btn-tts-modal').forEach(btn => {
-      btn.onclick = (e) => {
-        e.preventDefault();
-        activeTtsRoom = btn.getAttribute('data-room');
-        modalRoomName.textContent = activeTtsRoom;
-        ttsText.value = '';
-        ttsModal.classList.add('active');
-      };
+    // 2. Info IP Toggle
+    speakersGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-info-toggle');
+      if (!btn) return;
+      e.preventDefault();
+      const room = btn.getAttribute('data-room');
+      showIpRooms[room] = !showIpRooms[room];
+      
+      // Toggle visibility in DOM immediately
+      const selector = normalizeSelector(room);
+      const badge = document.querySelector(`#speaker-card-${selector} .speaker-ip-badge`);
+      if (badge) {
+        badge.classList.toggle('visible', showIpRooms[room]);
+      }
     });
 
-    // 3. Volume Sliders
-    document.querySelectorAll('.volume-slider').forEach(slider => {
+    // 3. Previous Track Action
+    speakersGrid.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-prev');
+      if (!btn) return;
+      e.preventDefault();
+      const room = btn.getAttribute('data-room');
+      try {
+        const response = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room, action: 'previous' })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast(`Vorheriger Titel in ${room}`);
+          fetchStatus();
+        } else {
+          showToast(data.error || 'Aktion fehlgeschlagen', 'error');
+        }
+      } catch (err) {
+        showToast('Netzwerkfehler', 'error');
+      }
+    });
+
+    // 4. Next Track Action
+    speakersGrid.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-next');
+      if (!btn) return;
+      e.preventDefault();
+      const room = btn.getAttribute('data-room');
+      try {
+        const response = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room, action: 'next' })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast(`Nächster Titel in ${room}`);
+          fetchStatus();
+        } else {
+          showToast(data.error || 'Aktion fehlgeschlagen', 'error');
+        }
+      } catch (err) {
+        showToast('Netzwerkfehler', 'error');
+      }
+    });
+
+    // 5. Shuffle Toggle Action
+    speakersGrid.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-shuffle');
+      if (!btn) return;
+      e.preventDefault();
+      const room = btn.getAttribute('data-room');
+      const playMode = btn.getAttribute('data-playmode') || 'NORMAL';
+      
+      const isShuffle = playMode.startsWith('SHUFFLE');
+      const isRepeatAll = playMode === 'REPEAT_ALL' || playMode === 'SHUFFLE';
+      
+      let targetMode = 'NORMAL';
+      if (!isShuffle) {
+        targetMode = isRepeatAll ? 'SHUFFLE' : 'SHUFFLE_NOREPEAT';
+      } else {
+        targetMode = isRepeatAll ? 'REPEAT_ALL' : 'NORMAL';
+      }
+      
+      try {
+        const response = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room, action: 'playmode', value: targetMode })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast(`Zufallswiedergabe in ${room} geändert`);
+          fetchStatus();
+        } else {
+          showToast(data.error || 'Aktion fehlgeschlagen', 'error');
+        }
+      } catch (err) {
+        showToast('Netzwerkfehler', 'error');
+      }
+    });
+
+    // 6. Repeat Cycle Action
+    speakersGrid.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-repeat');
+      if (!btn) return;
+      e.preventDefault();
+      const room = btn.getAttribute('data-room');
+      const playMode = btn.getAttribute('data-playmode') || 'NORMAL';
+      
+      const isShuffle = playMode.startsWith('SHUFFLE');
+      let currentRepeat = 'none';
+      if (playMode === 'REPEAT_ONE') currentRepeat = 'one';
+      else if (playMode === 'REPEAT_ALL' || playMode === 'SHUFFLE') currentRepeat = 'all';
+      
+      let nextRepeat = 'none';
+      if (currentRepeat === 'none') nextRepeat = 'all';
+      else if (currentRepeat === 'all') nextRepeat = 'one';
+      else if (currentRepeat === 'one') nextRepeat = 'none';
+      
+      let targetMode = 'NORMAL';
+      if (nextRepeat === 'none') {
+        targetMode = isShuffle ? 'SHUFFLE_NOREPEAT' : 'NORMAL';
+      } else if (nextRepeat === 'all') {
+        targetMode = isShuffle ? 'SHUFFLE' : 'REPEAT_ALL';
+      } else if (nextRepeat === 'one') {
+        targetMode = 'REPEAT_ONE';
+      }
+      
+      try {
+        const response = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room, action: 'playmode', value: targetMode })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast(`Wiederholungsmodus in ${room} geändert`);
+          fetchStatus();
+        } else {
+          showToast(data.error || 'Aktion fehlgeschlagen', 'error');
+        }
+      } catch (err) {
+        showToast('Netzwerkfehler', 'error');
+      }
+    });
+
+    // 7. TTS Modal Opener
+    speakersGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-tts-trigger');
+      if (!btn) return;
+      e.preventDefault();
+      activeTtsRoom = btn.getAttribute('data-room');
+      modalRoomName.textContent = activeTtsRoom;
+      ttsText.value = '';
+      ttsModal.classList.add('active');
+    });
+
+    // 8. Volume Sliders Drag state
+    const handleDragStart = (e) => {
+      const slider = e.target.closest('.volume-slider');
+      if (!slider) return;
       const room = slider.getAttribute('data-room');
+      isDraggingVolume[room] = true;
+    };
+    speakersGrid.addEventListener('mousedown', handleDragStart);
+    speakersGrid.addEventListener('touchstart', handleDragStart, { passive: true });
+
+    // Slider Input (dragging)
+    speakersGrid.addEventListener('input', (e) => {
+      const slider = e.target.closest('.volume-slider');
+      if (!slider) return;
+      const room = slider.getAttribute('data-room');
+      const val = e.target.value;
+      
       const selector = normalizeSelector(room);
       const valText = document.getElementById(`volume-val-${selector}`);
       const volIcon = document.getElementById(`volume-icon-${selector}`);
 
-      slider.onmousedown = slider.ontouchstart = () => {
-        isDraggingVolume[room] = true;
-      };
+      if (valText) valText.textContent = `${val}%`;
+      slider.style.setProperty('--value', val + '%');
 
-      slider.oninput = (e) => {
-        const val = e.target.value;
-        valText.textContent = `${val}%`;
-        slider.style.setProperty('--value', val + '%');
+      // Update speaker volume icon dynamically on drag
+      let icon = 'volume_mute';
+      if (val > 66) icon = 'volume_up';
+      else if (val > 33) icon = 'volume_down';
+      else if (val > 0) icon = 'volume_mute';
+      else icon = 'volume_off';
+      if (volIcon) volIcon.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
 
-        // Update speaker volume icon dynamically on drag
-        let icon = '🔈';
-        if (val > 66) icon = '🔊';
-        else if (val > 33) icon = '🔉';
-        else if (val > 0) icon = '🔈';
-        else icon = '🔇';
-        volIcon.textContent = icon;
-
-        sendVolumeUpdate(room, val);
-      };
-
-      slider.onchange = () => {
-        isDraggingVolume[room] = false;
-        // Fetch status soon after drag release to align state
-        setTimeout(fetchStatus, 500);
-      };
+      sendVolumeUpdate(room, val);
     });
 
-    // 4. Favorites Dropdown selection change
-    document.querySelectorAll('.favorites-dropdown').forEach(dropdown => {
-      dropdown.onchange = async (e) => {
-        const room = dropdown.getAttribute('data-room');
-        const favName = e.target.value;
-        if (!favName) return;
+    // Slider Change (release)
+    speakersGrid.addEventListener('change', (e) => {
+      const slider = e.target.closest('.volume-slider');
+      if (!slider) return;
+      const room = slider.getAttribute('data-room');
+      isDraggingVolume[room] = false;
+      // Fetch status soon after drag release to align state
+      setTimeout(fetchStatus, 500);
+    });
 
-        try {
-          const response = await fetch('/api/control', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ room, action: 'favorite', value: favName })
-          });
-          const data = await response.json();
-          if (data.success) {
-            showToast(`Favorit "${favName}" wird in ${room} abgespielt`);
-            fetchStatus();
-          } else {
-            showToast(data.error || 'Aktion fehlgeschlagen', 'error');
-          }
-        } catch (err) {
-          showToast('Netzwerkfehler', 'error');
+    // 9. Favorites Dropdown selection change
+    speakersGrid.addEventListener('change', async (e) => {
+      const dropdown = e.target.closest('.favorites-dropdown');
+      if (!dropdown) return;
+      const room = dropdown.getAttribute('data-room');
+      const favName = e.target.value;
+      if (!favName) return;
+
+      try {
+        const response = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room, action: 'favorite', value: favName })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast(`Favorit "${favName}" wird in ${room} abgespielt`);
+          fetchStatus();
+        } else {
+          showToast(data.error || 'Aktion fehlgeschlagen', 'error');
+          console.error('[Bridge Control Error] favorite action failed:', data);
         }
-      };
+      } catch (err) {
+        showToast('Netzwerkfehler', 'error');
+        console.error('[Bridge Network Error] favorite action fetch failed:', err);
+      }
     });
   }
 
@@ -483,9 +1011,11 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal();
       } else {
         showToast(data.error || 'Sprachansage fehlgeschlagen', 'error');
+        console.error('[Bridge Control Error] say action failed:', data);
       }
     } catch (err) {
       showToast('Netzwerkfehler beim Senden des TTS', 'error');
+      console.error('[Bridge Network Error] say action fetch failed:', err);
     }
   };
 
@@ -545,9 +1075,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => fetchStatus(true), 1000);
       } else {
         showToast(data.error || 'Speichern der Einstellungen fehlgeschlagen', 'error');
+        console.error('[Bridge Settings Error] save settings failed:', data);
       }
     } catch (err) {
       showToast('Netzwerkfehler beim Speichern der Einstellungen', 'error');
+      console.error('[Bridge Network Error] save settings fetch failed:', err);
     }
   };
 
@@ -575,9 +1107,11 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Suche beendet. Sonos-Lautsprecher aktualisiert.');
       } else {
         showToast('Fehler bei der Suche: ' + (data.error || 'Unbekannt'), 'error');
+        console.error('[Bridge Discover Error] discovery failed:', data);
       }
     } catch (err) {
       showToast('Netzwerkfehler bei der Suche', 'error');
+      console.error('[Bridge Network Error] discovery fetch failed:', err);
     } finally {
       btnRefresh.disabled = false;
       btnRefresh.innerHTML = originalContent;
@@ -603,6 +1137,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Initialize and start polling
+  setupEventDelegation();
   fetchStatus(true);
   pollInterval = setInterval(fetchStatus, 3000);
 });

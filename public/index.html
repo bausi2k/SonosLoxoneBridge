@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔊</text></svg>">
 </head>
@@ -20,12 +21,12 @@
     <!-- Header -->
     <header class="app-header">
       <div class="brand">
-        <span class="icon">🔊</span>
+        <span class="icon"><span class="material-symbols-outlined">settings_input_antenna</span></span>
         <h1>Sonos<span>Loxone</span>Bridge</h1>
       </div>
       <div class="header-controls">
         <button id="theme-toggle" class="btn-theme-toggle" title="Design umschalten">
-          <span class="theme-icon">🌙</span>
+          <span class="theme-icon"><span class="material-symbols-outlined">dark_mode</span></span>
         </button>
         <div class="bridge-status">
           <span class="status-indicator online"></span>
@@ -37,13 +38,13 @@
     <!-- Tab Navigation -->
     <div class="tab-navigation glass-card">
       <button class="tab-btn active" data-tab="speakers">
-        <span class="btn-icon">🔊</span> Lautsprecher
+        <span class="btn-icon"><span class="material-symbols-outlined">speaker</span></span> Lautsprecher
       </button>
       <button class="tab-btn" data-tab="settings">
-        <span class="btn-icon">⚙️</span> Einstellungen
+        <span class="btn-icon"><span class="material-symbols-outlined">settings</span></span> Einstellungen
       </button>
       <button class="tab-btn" data-tab="manual">
-        <span class="btn-icon">📖</span> Anleitung
+        <span class="btn-icon"><span class="material-symbols-outlined">menu_book</span></span> Anleitung
       </button>
     </div>
 
@@ -54,7 +55,7 @@
         <div class="section-header">
           <h2>Sonos Lautsprecher</h2>
           <button id="btn-refresh" class="btn btn-secondary">
-            <span class="btn-icon">🔄</span> Aktualisieren
+            <span class="btn-icon"><span class="material-symbols-outlined">refresh</span></span> Aktualisieren
           </button>
         </div>
 
@@ -114,20 +115,35 @@
 
               <div class="settings-actions">
                 <button type="submit" id="btn-save-settings" class="btn btn-primary">
-                  <span class="btn-icon">💾</span> Einstellungen speichern
+                  <span class="btn-icon"><span class="material-symbols-outlined">save</span></span> Einstellungen speichern
                 </button>
               </div>
             </form>
           </div>
 
-          <!-- Integration Helper Card -->
-          <div class="glass-card integration-card">
-            <h3>Loxone Integration</h3>
-            <p>Lade die fertig generierte XML-Importvorlage herunter, um alle virtuellen UDP-Eingänge mit einem Klick in Loxone Config anzulegen.</p>
-            <a href="/api/loxone-export" download class="btn btn-secondary btn-full">
-              <span class="btn-icon">📥</span> XML-Importvorlage laden
-            </a>
-          </div>
+            <!-- Integration Helper Card -->
+            <div class="glass-card integration-card">
+              <h3>Loxone Integration</h3>
+              <p>Lade die fertig generierte XML-Importvorlage herunter, um alle virtuellen UDP-Eingänge mit einem Klick in Loxone Config anzulegen.</p>
+              <a href="/api/loxone-export" download class="btn btn-secondary btn-full">
+                <span class="btn-icon"><span class="material-symbols-outlined">download</span></span> XML-Importvorlage laden
+              </a>
+            </div>
+
+            <!-- System Log Console Card -->
+            <div class="glass-card console-card">
+              <h3>System-Protokoll</h3>
+              <p class="console-intro">Echtzeit-Ansicht der Brücken-Aktivitäten und eventueller Fehler.</p>
+              <pre id="log-console" class="log-console-pre"></pre>
+              <div class="console-actions">
+                <button type="button" id="btn-copy-logs" class="btn btn-secondary">
+                  <span class="btn-icon"><span class="material-symbols-outlined">content_copy</span></span> Kopieren
+                </button>
+                <button type="button" id="btn-clear-logs" class="btn btn-danger">
+                  <span class="btn-icon"><span class="material-symbols-outlined">delete_sweep</span></span> Leeren
+                </button>
+              </div>
+            </div>
         </div>
       </section>
 
@@ -232,7 +248,7 @@
       </div>
       <div class="modal-footer">
         <button id="btn-send-tts" class="btn btn-primary">
-          📢 Ansage abspielen
+          <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 4px;">record_voice_over</span> Ansage abspielen
         </button>
       </div>
     </div>
