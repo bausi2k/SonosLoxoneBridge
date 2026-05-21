@@ -62,6 +62,18 @@ describe('Express REST & Inbound API', () => {
   });
 
   describe('Frontend REST API', () => {
+    test('GET / should return index.html with tab structure', async () => {
+      const res = await request(app).get('/');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<div class="tab-navigation');
+      expect(res.text).toContain('data-tab="speakers"');
+      expect(res.text).toContain('data-tab="settings"');
+      expect(res.text).toContain('data-tab="manual"');
+      expect(res.text).toContain('id="tab-speakers"');
+      expect(res.text).toContain('id="tab-settings"');
+      expect(res.text).toContain('id="tab-manual"');
+    });
+
     test('GET /api/status should return system status', async () => {
       const res = await request(app).get('/api/status');
       expect(res.status).toBe(200);

@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsForm = document.getElementById('settings-form');
   const toast = document.getElementById('notification-toast');
 
+  // Tab Navigation Elements
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
   // TTS Modal Elements
   const ttsModal = document.getElementById('tts-modal');
   const btnCloseModal = document.getElementById('btn-close-modal');
@@ -24,6 +28,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const ttsVolume = document.getElementById('tts-volume');
   const ttsVolumeValue = document.getElementById('tts-volume-value');
   const modalRoomName = document.getElementById('modal-room-name');
+
+  // Tab Switching Functionality
+  function switchTab(tabId) {
+    tabButtons.forEach(btn => {
+      if (btn.getAttribute('data-tab') === tabId) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    tabContents.forEach(content => {
+      if (content.id === `tab-${tabId}`) {
+        content.classList.remove('hidden');
+        content.classList.add('active');
+      } else {
+        content.classList.add('hidden');
+        content.classList.remove('active');
+      }
+    });
+
+    localStorage.setItem('activeTab', tabId);
+  }
+
+  // Bind click handlers to tab buttons
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tabId = btn.getAttribute('data-tab');
+      switchTab(tabId);
+    });
+  });
+
+  // Restore active tab from localStorage
+  const savedTab = localStorage.getItem('activeTab') || 'speakers';
+  switchTab(savedTab);
 
   // App State
   let currentRooms = [];
@@ -63,6 +103,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isInitial && data.settings) {
           populateSettingsForm(data.settings);
         }
+
+        // Update manual IP and Port values dynamically
+        const bridgePort = (data.settings && data.settings.port) || 8888;
+        const bridgeIp = data.bridgeIp || '127.0.0.1';
+
+        const manualIpEl = document.getElementById('manual-bridge-ip');
+        const manualPortEl = document.getElementById('manual-bridge-port');
+        if (manualIpEl) manualIpEl.textContent = bridgeIp;
+        if (manualPortEl) manualPortEl.textContent = bridgePort;
+
+        document.querySelectorAll('.ex-ip').forEach(el => {
+          el.textContent = bridgeIp;
+        });
+        document.querySelectorAll('.ex-port').forEach(el => {
+          el.textContent = bridgePort;
+        });
 
         renderSpeakers();
         

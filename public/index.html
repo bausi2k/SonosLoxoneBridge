@@ -27,10 +27,23 @@
       </div>
     </header>
 
-    <!-- Main Content Grid -->
+    <!-- Tab Navigation -->
+    <div class="tab-navigation glass-card">
+      <button class="tab-btn active" data-tab="speakers">
+        <span class="btn-icon">🔊</span> Lautsprecher
+      </button>
+      <button class="tab-btn" data-tab="settings">
+        <span class="btn-icon">⚙️</span> Einstellungen
+      </button>
+      <button class="tab-btn" data-tab="manual">
+        <span class="btn-icon">📖</span> Anleitung
+      </button>
+    </div>
+
+    <!-- Main Content -->
     <main class="app-main">
-      <!-- Speakers Section -->
-      <section class="section-speakers">
+      <!-- Tab 1: Speakers -->
+      <section id="tab-speakers" class="tab-content active">
         <div class="section-header">
           <h2>Sonos Lautsprecher</h2>
           <button id="btn-refresh" class="btn btn-secondary">
@@ -47,65 +60,140 @@
         </div>
       </section>
 
-      <!-- Settings / Sidebar Section -->
-      <section class="section-sidebar">
-        <!-- Settings Card -->
-        <div class="glass-card settings-card">
-          <h3>Einstellungen</h3>
-          <form id="settings-form">
-            <div class="form-group">
-              <label for="settings-port">Bridge HTTP Port</label>
-              <input type="number" id="settings-port" name="port" required placeholder="8888">
-            </div>
+      <!-- Tab 2: Settings -->
+      <section id="tab-settings" class="tab-content hidden">
+        <div class="settings-grid">
+          <!-- Settings Card -->
+          <div class="glass-card settings-card">
+            <h3>Einstellungen</h3>
+            <form id="settings-form">
+              <div class="form-group">
+                <label for="settings-port">Bridge HTTP Port</label>
+                <input type="number" id="settings-port" name="port" required placeholder="8888">
+              </div>
 
-            <div class="form-group">
-              <label for="settings-loxone-ip">Loxone Miniserver IP</label>
-              <input type="text" id="settings-loxone-ip" name="loxoneIp" required placeholder="e.g. 192.168.1.10">
-            </div>
+              <div class="form-group">
+                <label for="settings-loxone-ip">Loxone Miniserver IP</label>
+                <input type="text" id="settings-loxone-ip" name="loxoneIp" required placeholder="e.g. 192.168.1.10">
+              </div>
 
-            <div class="form-group">
-              <label for="settings-loxone-port">Loxone UDP Input Port</label>
-              <input type="number" id="settings-loxone-port" name="loxonePort" required placeholder="7777">
-            </div>
+              <div class="form-group">
+                <label for="settings-loxone-port">Loxone UDP Input Port</label>
+                <input type="number" id="settings-loxone-port" name="loxonePort" required placeholder="7777">
+              </div>
 
-            <div class="form-group">
-              <label for="settings-tts-language">TTS Standardsprache</label>
-              <select id="settings-tts-language" name="ttsLanguage">
-                <option value="de">Deutsch (de)</option>
-                <option value="en">English (en)</option>
-                <option value="fr">Français (fr)</option>
-                <option value="it">Italiano (it)</option>
-                <option value="es">Español (es)</option>
-              </select>
-            </div>
+              <div class="form-group">
+                <label for="settings-tts-language">TTS Standardsprache</label>
+                <select id="settings-tts-language" name="ttsLanguage">
+                  <option value="de">Deutsch (de)</option>
+                  <option value="en">English (en)</option>
+                  <option value="fr">Français (fr)</option>
+                  <option value="it">Italiano (it)</option>
+                  <option value="es">Español (es)</option>
+                </select>
+              </div>
 
-            <div class="form-group">
-              <label for="settings-static-ips">Statische Lautsprecher IPs (Optional)</label>
-              <textarea id="settings-static-ips" name="staticSpeakerIps" rows="3" placeholder="Ein Eintrag pro Zeile, z.B.&#10;192.168.1.50&#10;192.168.1.51"></textarea>
-              <small class="help-text">Wichtig, falls Auto-Discovery im Docker-Container blockiert ist.</small>
-            </div>
+              <div class="form-group">
+                <label for="settings-static-ips">Statische Lautsprecher IPs (Optional)</label>
+                <textarea id="settings-static-ips" name="staticSpeakerIps" rows="3" placeholder="Ein Eintrag pro Zeile, z.B.&#10;192.168.1.50&#10;192.168.1.51"></textarea>
+                <small class="help-text">Wichtig, falls Auto-Discovery im Docker-Container blockiert ist.</small>
+              </div>
 
-            <div class="form-group">
-              <label for="settings-aliases">Raum-Aliases (Optional)</label>
-              <textarea id="settings-aliases" name="roomAliases" rows="3" placeholder='JSON Format, z.B.&#10;{&#10;  "wohnzimmer": "Living Room"&#10;}'></textarea>
-              <small class="help-text">Verknüpft Loxone-Bezeichnungen mit echten Sonos-Raumnamen.</small>
-            </div>
+              <div class="form-group">
+                <label for="settings-aliases">Raum-Aliases (Optional)</label>
+                <textarea id="settings-aliases" name="roomAliases" rows="3" placeholder='JSON Format, z.B.&#10;{&#10;  "wohnzimmer": "Living Room"&#10;}'></textarea>
+                <small class="help-text">Verknüpft Loxone-Bezeichnungen mit echten Sonos-Raumnamen.</small>
+              </div>
 
-            <div class="settings-actions">
-              <button type="submit" id="btn-save-settings" class="btn btn-primary">
-                <span class="btn-icon">💾</span> Einstellungen speichern
-              </button>
-            </div>
-          </form>
+              <div class="settings-actions">
+                <button type="submit" id="btn-save-settings" class="btn btn-primary">
+                  <span class="btn-icon">💾</span> Einstellungen speichern
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Integration Helper Card -->
+          <div class="glass-card integration-card">
+            <h3>Loxone Integration</h3>
+            <p>Lade die fertig generierte XML-Importvorlage herunter, um alle virtuellen UDP-Eingänge mit einem Klick in Loxone Config anzulegen.</p>
+            <a href="/api/loxone-export" download class="btn btn-secondary btn-full">
+              <span class="btn-icon">📥</span> XML-Importvorlage laden
+            </a>
+          </div>
         </div>
+      </section>
 
-        <!-- Integration Helper Card -->
-        <div class="glass-card integration-card">
-          <h3>Loxone Integration</h3>
-          <p>Lade die fertig generierte XML-Importvorlage herunter, um alle virtuellen UDP-Eingänge mit einem Klick in Loxone Config anzulegen.</p>
-          <a href="/api/loxone-export" download class="btn btn-secondary btn-full">
-            <span class="btn-icon">📥</span> XML-Importvorlage laden
-          </a>
+      <!-- Tab 3: Manual / Anleitung -->
+      <section id="tab-manual" class="tab-content hidden">
+        <div class="glass-card manual-card">
+          <h3>HTTP-API-Steuerung (Anleitung)</h3>
+          <p class="manual-intro">Der Loxone Miniserver oder andere Smart-Home-Komponenten können alle Sonos-Lautsprecher über einfache HTTP-GET-Anfragen steuern. Die Basis-URL lautet:</p>
+          <div class="code-block-wrapper">
+            <code class="code-base">http://<span id="manual-bridge-ip">127.0.0.1</span>:<span id="manual-bridge-port">8888</span></code>
+          </div>
+          
+          <div class="api-endpoints">
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">/:raum/play</span>
+              </div>
+              <p class="endpoint-desc">Startet die Musikwiedergabe im angegebenen Raum.</p>
+              <div class="endpoint-example">
+                <strong>Beispiel:</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/play</code>
+              </div>
+            </div>
+
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">/:raum/pause</span>
+              </div>
+              <p class="endpoint-desc">Pausiert die Musikwiedergabe im angegebenen Raum.</p>
+              <div class="endpoint-example">
+                <strong>Beispiel:</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/pause</code>
+              </div>
+            </div>
+
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">/:raum/volume/:wert</span>
+              </div>
+              <p class="endpoint-desc">Regelt die Lautstärke im angegebenen Raum. Unterstützt absolute Werte (<code>0</code> bis <code>100</code>) sowie relative Anpassungen mit <code>+</code> oder <code>-</code> Präfix.</p>
+              <div class="endpoint-example font-small">
+                <strong>Beispiele:</strong>
+                <ul>
+                  <li>Lautstärke auf 25% setzen: <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/volume/25</code></li>
+                  <li>Lautstärke um 5% erhöhen: <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/volume/+5</code></li>
+                  <li>Lautstärke um 10% verringern: <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/volume/-10</code></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">/:raum/favorite/:name</span>
+              </div>
+              <p class="endpoint-desc">Spielt einen in der Sonos-App hinterlegten Favoriten (z. B. einen Radio-Sender oder eine Playlist) ab. Der Name wird case-insensitiv verglichen.</p>
+              <div class="endpoint-example">
+                <strong>Beispiel:</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/favorite/Radio%20Superfly</code>
+              </div>
+            </div>
+
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">/:raum/say/:text/:volume?</span>
+              </div>
+              <p class="endpoint-desc">Führt eine Sprachansage (TTS) im Raum aus. Die Lautstärke ist optional. Nach Ende der Durchsage wird der vorherige Wiedergabezustand automatisch wiederhergestellt.</p>
+              <div class="endpoint-example">
+                <strong>Beispiel (mit Lautstärke 40%):</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/say/Die%20Waschmaschine%20ist%20fertig/40</code>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </main>
