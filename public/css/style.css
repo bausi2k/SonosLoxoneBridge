@@ -1,34 +1,77 @@
 /* ==========================================================================
-   SonosLoxoneBridge Design System (Vanilla CSS)
-   Aesthetics: Premium Glassmorphism, Dark Slate-Blue, Glowing Accents
+   SonosLoxoneBridge Premium Stylesheet (Vanilla CSS)
+   Aesthetics: Clean Card-Based Design (Design-Guide Style)
+   Features: Light/Dark Mode Switch, Red & Blue Highlights, Responsive UI
    ========================================================================== */
 
 :root {
-  /* Harmonious Color Palette */
-  --bg-main: #0f172a;        /* Deep slate-900 */
-  --bg-card: rgba(30, 41, 59, 0.45);
-  --bg-card-hover: rgba(30, 41, 59, 0.65);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-hover: rgba(255, 255, 255, 0.15);
+  /* Light Mode Variables (Design-Guide Aesthetic) */
+  --bg-main: #9fb3c8;        /* Soft Matte Blue-Gray from guide */
+  --bg-card: #ffffff;        /* Pure White Cards */
+  --bg-card-hover: #ffffff;
+  --border-color: rgba(15, 23, 42, 0.05);
+  --border-color-hover: rgba(15, 23, 42, 0.1);
   
-  --color-primary: #8b5cf6;  /* Vivid Violet */
-  --color-primary-glow: rgba(139, 92, 246, 0.35);
-  --color-secondary: #6366f1; /* Electric Indigo */
-  --color-accent: #06b6d4;    /* Cyan */
-  --color-success: #10b981;   /* Emerald */
-  --color-danger: #ef4444;    /* Coral Red */
+  --color-blue: #1b75ff;      /* Primary Highlight: Vibrant Blue */
+  --color-blue-hover: #0056e0;
+  --color-blue-glow: rgba(27, 117, 255, 0.18);
   
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-inverse: #0f172a;
+  --color-red: #ff3b30;       /* Secondary Highlight: Vibrant Red */
+  --color-red-hover: #e0241b;
+  --color-red-glow: rgba(255, 59, 48, 0.18);
+  
+  --color-success: #34c759;   /* iOS Green */
+  --color-danger: #ff3b30;    /* iOS Red */
+  
+  --text-main: #1e293b;       /* High Contrast Deep Slate */
+  --text-muted: #64748b;      /* Clear Slate-500 */
+  --text-inverse: #ffffff;
 
+  --slider-track-bg: #e2e8f0; /* Clear slate slider track */
+  --tab-nav-bg: rgba(15, 23, 42, 0.05);
+  --tab-btn-active-bg: #ffffff;
+  
   --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(255, 255, 255, 0.05);
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Very soft dispersed shadow for floating card effect */
+  --shadow-premium: 0 12px 36px rgba(15, 23, 42, 0.08), 
+                    0 2px 4px rgba(15, 23, 42, 0.02);
+}
+
+.dark-mode {
+  /* Dark Mode Variables */
+  --bg-main: #0f172a;        /* Deep Slate-900 */
+  --bg-card: #1e293b;        /* Charcoal-Slate Cards */
+  --bg-card-hover: #243249;
+  --border-color: rgba(255, 255, 255, 0.05);
+  --border-color-hover: rgba(255, 255, 255, 0.1);
+  
+  --color-blue: #3b82f6;      /* Bright Blue for Dark Contrast */
+  --color-blue-hover: #2563eb;
+  --color-blue-glow: rgba(59, 130, 246, 0.25);
+  
+  --color-red: #ef4444;       /* Bright Red for Dark Contrast */
+  --color-red-hover: #dc2626;
+  --color-red-glow: rgba(239, 68, 68, 0.25);
+  
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  
+  --text-main: #f8fafc;       /* Off-White Text */
+  --text-muted: #94a3b8;      /* Slate-400 */
+  --text-inverse: #0f172a;
+  
+  --slider-track-bg: #334155; /* Darker track for Dark Mode */
+  --tab-nav-bg: rgba(255, 255, 255, 0.04);
+  --tab-btn-active-bg: #0f172a;
+  
+  --shadow-premium: 0 15px 35px rgba(0, 0, 0, 0.3), 
+                    0 1px 3px rgba(255, 255, 255, 0.02);
 }
 
 /* ==========================================================================
-   Base & Layout
+   Base Styles & Ambient Glows
    ========================================================================== */
 
 * {
@@ -46,9 +89,10 @@ body {
   overflow-x: hidden;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* Ambient Background Glows */
+/* Glowing background ambient spots using highlight colors */
 .background-glow {
   position: fixed;
   width: 500px;
@@ -57,27 +101,27 @@ body {
   pointer-events: none;
   z-index: -1;
   filter: blur(130px);
-  opacity: 0.15;
+  opacity: 0.08; /* Very subtle glow */
   transition: var(--transition-smooth);
 }
 
 .bg-glow-1 {
-  background: var(--color-primary);
+  background: var(--color-red);
   top: -100px;
   right: -50px;
 }
 
 .bg-glow-2 {
-  background: var(--color-secondary);
+  background: var(--color-blue);
   bottom: -150px;
   left: -50px;
 }
 
 .app-container {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -85,7 +129,7 @@ body {
 }
 
 /* ==========================================================================
-   Header & Typography
+   Header controls, Brand, and Status
    ========================================================================== */
 
 .app-header {
@@ -103,50 +147,82 @@ body {
 }
 
 .brand .icon {
-  font-size: 2rem;
+  font-size: 2.25rem;
 }
 
 .brand h1 {
-  font-size: 1.75rem;
+  font-size: 1.85rem;
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   color: var(--text-main);
 }
 
 .brand h1 span {
-  color: var(--color-primary);
+  color: var(--color-blue);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Theme Switcher Toggle Button */
+.btn-theme-toggle {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+  transition: var(--transition-smooth);
+  color: var(--text-main);
+  outline: none;
+}
+
+.btn-theme-toggle:hover {
+  transform: scale(1.05);
+  border-color: var(--color-blue);
+  box-shadow: 0 4px 12px var(--color-blue-glow);
 }
 
 .bridge-status {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 0.5rem 1rem;
+  background: var(--bg-card);
+  padding: 0.55rem 1rem;
   border-radius: 20px;
   border: 1px solid var(--border-color);
   font-size: 0.875rem;
   color: var(--text-muted);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .status-indicator {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
 }
 
 .status-indicator.online {
   background-color: var(--color-success);
-  box-shadow: 0 0 10px var(--color-success);
+  box-shadow: 0 0 8px var(--color-success);
 }
 
 .status-indicator.offline {
   background-color: var(--color-danger);
-  box-shadow: 0 0 10px var(--color-danger);
+  box-shadow: 0 0 8px var(--color-danger);
 }
 
 /* ==========================================================================
-   Main Layout & Tab Navigation
+   Navigation Tabs (Segmented Recessed Pills)
    ========================================================================== */
 
 .app-main {
@@ -154,41 +230,47 @@ body {
   flex: 1;
 }
 
-/* Tab Navigation */
-.tab-navigation {
+.tab-navigation.glass-card {
   display: flex;
-  gap: 0.75rem;
-  padding: 0.5rem;
-  border-radius: 14px;
-  background: rgba(30, 41, 59, 0.3);
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border-radius: 16px;
+  background: var(--tab-nav-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .tab-btn {
+  flex: 1;
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   color: var(--text-muted);
-  padding: 0.75rem 1.5rem;
-  border-radius: 10px;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
   font-family: var(--font-family);
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   transition: var(--transition-smooth);
 }
 
 .tab-btn:hover {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.04);
 }
 
 .tab-btn.active {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+  color: var(--color-blue);
+  background: var(--tab-btn-active-bg);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.02);
+}
+
+/* Active tab text color in dark mode is brighter */
+.dark-mode .tab-btn.active {
+  color: #ffffff;
 }
 
 .tab-content {
@@ -199,54 +281,14 @@ body {
   display: none !important;
 }
 
-/* Settings Tab Layout */
-.settings-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 2rem;
-}
-
-@media (max-width: 1024px) {
-  .settings-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Sections */
-.section-speakers {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.section-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.section-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
 /* ==========================================================================
-   Premium Glassmorphism Cards
+   Premium Glassmorphic Cards (Design-Guide Style)
    ========================================================================== */
 
 .glass-card {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 24px; /* 24px Rounded Corners */
   padding: 1.5rem;
   box-shadow: var(--shadow-premium);
   transition: var(--transition-smooth);
@@ -258,8 +300,21 @@ body {
 }
 
 /* ==========================================================================
-   Speakers Grid & Speaker Cards
+   Speakers Tab & Card Generation
    ========================================================================== */
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
 
 .speakers-grid {
   display: grid;
@@ -270,122 +325,198 @@ body {
 .speaker-card {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   position: relative;
+}
+
+.speaker-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 }
 
 .speaker-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
 .speaker-room {
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-main);
 }
 
 .speaker-ip {
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
-/* Playback Control Bar */
-.speaker-controls {
+/* Play/Pause Circle Highlight Switcher */
+.btn-play-pause-circle {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: center;
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-.speaker-main-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.btn-play-pause-circle:hover {
+  transform: scale(1.05);
+  border-color: var(--color-blue);
+  box-shadow: 0 4px 10px var(--color-blue-glow);
 }
 
-/* Volume Slider Section */
-.speaker-volume-control {
+.btn-play-pause-circle.playing {
+  background: linear-gradient(135deg, var(--color-blue), #0052cc);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--color-blue-glow);
+}
+
+.btn-play-pause-circle.playing:hover {
+  box-shadow: 0 6px 16px rgba(27, 117, 255, 0.4);
+}
+
+/* ==========================================================================
+   Volume Slider (Dynamic Gradient Fill, Blue Highlight)
+   ========================================================================== */
+
+.speaker-volume-section {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin: 0.5rem 0;
 }
 
-.volume-header {
+.volume-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8125rem;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--text-muted);
 }
 
-.volume-slider-wrapper {
+.volume-val {
+  color: var(--color-blue);
+  font-weight: 700;
+}
+
+.volume-slider-container {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
 .volume-icon {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  width: 1.5rem;
+  text-align: center;
 }
 
 .volume-slider {
   flex: 1;
   -webkit-appearance: none;
   appearance: none;
-  background: rgba(255, 255, 255, 0.1);
-  height: 6px;
-  border-radius: 3px;
+  /* Progress fill effect via linear gradient */
+  background: linear-gradient(to right, var(--color-blue) 0%, var(--color-blue) var(--value, 0%), var(--slider-track-bg) var(--value, 0%), var(--slider-track-bg) 100%);
+  height: 8px;
+  border-radius: 4px;
   outline: none;
+  transition: opacity 0.2s;
 }
 
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow: 0 0 10px var(--color-primary);
+  background: #ffffff;
+  border: 2px solid var(--color-blue);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
   cursor: pointer;
-  transition: var(--transition-smooth);
+  transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 .volume-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
+  background: var(--color-blue);
+  border-color: #ffffff;
 }
 
-/* Speaker Card Extra Features */
-.speaker-features {
+/* ==========================================================================
+   Dropdown Wrapper & Cards Footer (Red/Blue Integration)
+   ========================================================================== */
+
+.speaker-card-footer {
   display: flex;
   gap: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 1rem;
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1.25rem;
+  margin-top: 0.25rem;
 }
 
-/* Favorites dropdown styling */
-.favorites-dropdown {
+.favorites-select-wrapper {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
+  min-width: 0;
+  position: relative;
+}
+
+.favorites-dropdown {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--bg-main);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
   border: 1px solid var(--border-color);
   color: var(--text-main);
-  padding: 0.5rem;
-  border-radius: 8px;
+  padding: 0.65rem 2rem 0.65rem 0.85rem;
+  border-radius: 14px; /* 14px Rounding */
   font-family: var(--font-family);
+  font-weight: 600;
   outline: none;
   cursor: pointer;
   transition: var(--transition-smooth);
   font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.01);
 }
 
 .favorites-dropdown:hover {
-  border-color: var(--border-color-hover);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-blue);
+}
+
+.favorites-dropdown option {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  font-weight: normal;
 }
 
 /* ==========================================================================
-   Buttons
+   Buttons (14px Rounding, Red/Blue highlights)
    ========================================================================== */
 
 .btn {
@@ -393,45 +524,54 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  border-radius: 10px;
+  padding: 0.65rem 1.25rem;
+  border-radius: 14px; /* 14px Rounding for controls */
   font-family: var(--font-family);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
   transition: var(--transition-smooth);
   border: none;
   outline: none;
 }
 
+/* Primary buttons use Blue Highlight */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  color: var(--text-main);
-  box-shadow: 0 4px 15px -3px var(--color-primary-glow);
+  background: var(--color-blue);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--color-blue-glow);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 20px -2px rgba(139, 92, 246, 0.5);
+  background: var(--color-blue-hover);
+  box-shadow: 0 6px 16px rgba(27, 117, 255, 0.35);
   transform: translateY(-1px);
 }
 
+/* Secondary buttons */
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-main);
   border: 1px solid var(--border-color);
   color: var(--text-main);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--border-color-hover);
+  border-color: var(--color-blue);
   transform: translateY(-1px);
 }
 
-.btn-icon-only {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 50%;
+/* TTS Ansage button highlighted in Red */
+.btn-tts-trigger {
+  background: var(--color-red);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--color-red-glow);
+  flex-shrink: 0;
+}
+
+.btn-tts-trigger:hover {
+  background: var(--color-red-hover);
+  box-shadow: 0 6px 16px rgba(255, 59, 48, 0.35);
+  transform: translateY(-1px);
 }
 
 .btn-full {
@@ -439,43 +579,88 @@ body {
 }
 
 /* ==========================================================================
-   Forms & Controls
+   Settings Tab Form Layout
    ========================================================================== */
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.settings-card h3,
+.integration-card h3 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.65rem;
+}
+
+.integration-card p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+/* Highlight button in red for integration templates */
+.integration-card .btn-secondary {
+  background: var(--color-red);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px var(--color-red-glow);
+}
+
+.integration-card .btn-secondary:hover {
+  background: var(--color-red-hover);
+  box-shadow: 0 6px 16px rgba(255, 59, 48, 0.35);
+}
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group label {
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 700;
   color: var(--text-muted);
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-main);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 0.625rem 0.875rem;
+  border-radius: 14px; /* 14px Rounding */
+  padding: 0.65rem 0.85rem;
   color: var(--text-main);
   font-family: var(--font-family);
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   outline: none;
   transition: var(--transition-smooth);
   width: 100%;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.01);
+}
+
+.form-group select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2rem;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: var(--color-primary);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 10px var(--color-primary-glow);
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px var(--color-blue-glow);
 }
 
 .form-group textarea {
@@ -483,33 +668,20 @@ body {
 }
 
 .help-text {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
-  line-height: 1.3;
-}
-
-/* ==========================================================================
-   Settings Card Styles
-   ========================================================================== */
-
-.settings-card h3,
-.integration-card h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding-bottom: 0.5rem;
-}
-
-.integration-card p {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  margin-bottom: 1.25rem;
   line-height: 1.4;
+  font-weight: 600;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 1rem;
 }
 
 /* ==========================================================================
-   Modal Dialog
+   Modal Dialog (TTS)
    ========================================================================== */
 
 .modal-overlay {
@@ -518,7 +690,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.35); /* Blurred glass overlay */
   backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;
@@ -534,11 +706,13 @@ body {
   pointer-events: all;
 }
 
-.modal-content {
-  width: 100%;
+.modal-content.glass-card {
+  width: 92%;
   max-width: 480px;
   transform: translateY(20px);
-  transition: var(--transition-smooth);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .modal-overlay.active .modal-content {
@@ -550,26 +724,27 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.25rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .modal-header h4 {
-  font-size: 1.15rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
 .btn-close {
   background: transparent;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   cursor: pointer;
   color: var(--text-muted);
   transition: var(--transition-smooth);
+  line-height: 1;
 }
 
 .btn-close:hover {
-  color: var(--text-main);
+  color: var(--color-red);
 }
 
 .modal-footer {
@@ -578,8 +753,19 @@ body {
   margin-top: 1.5rem;
 }
 
+/* Modal TTS Play button uses Red Highlight */
+.modal-footer .btn-primary {
+  background: var(--color-red);
+  box-shadow: 0 4px 12px var(--color-red-glow);
+}
+
+.modal-footer .btn-primary:hover {
+  background: var(--color-red-hover);
+  box-shadow: 0 6px 16px rgba(255, 59, 48, 0.35);
+}
+
 /* ==========================================================================
-   Loading & Feedback
+   Loading States & Toast Notification
    ========================================================================== */
 
 .loading-state {
@@ -592,13 +778,18 @@ body {
   gap: 1rem;
 }
 
+.loading-state p {
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.05);
-  border-top-color: var(--color-primary);
+  width: 42px;
+  height: 42px;
+  border: 4px solid var(--bg-main);
+  border-top-color: var(--color-red); /* Spinner highlight in Red */
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -610,14 +801,15 @@ body {
   bottom: 2rem;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: rgba(30, 41, 59, 0.95);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-premium);
-  color: var(--text-main);
-  padding: 0.75rem 1.5rem;
-  border-radius: 12px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  padding: 0.85rem 1.75rem;
+  border-radius: 14px;
   z-index: 1100;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 700;
   transition: var(--transition-smooth);
   opacity: 0;
   pointer-events: none;
@@ -632,44 +824,46 @@ body {
 }
 
 .toast.success {
-  border-left: 4px solid var(--color-success);
+  border-left: 4px solid var(--color-blue);
 }
 
 .toast.error {
-  border-left: 4px solid var(--color-danger);
+  border-left: 4px solid var(--color-red);
 }
 
 /* ==========================================================================
-   Manual / Anleitung Tab Styles
+   Manual / Anleitung Tab (GET Request Endpoints)
    ========================================================================== */
 
 .manual-card h3 {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.75rem;
 }
 
 .manual-intro {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 1rem;
   margin-bottom: 1.5rem;
+  line-height: 1.6;
 }
 
 .code-block-wrapper {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--border-color);
+  background: #0f172a; /* Sleek black terminal */
+  border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 1rem 1.5rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
+  border-radius: 14px;
+  margin-bottom: 1.75rem;
   display: inline-block;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
 }
 
 .code-base {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 1.2rem;
-  color: var(--color-accent);
+  font-size: 1.15rem;
+  color: #38bdf8; /* Terminal bright cyan */
   font-weight: 600;
 }
 
@@ -680,29 +874,29 @@ body {
 }
 
 .api-endpoint-card {
-  background: rgba(15, 23, 42, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
-  padding: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 1.5rem;
   transition: var(--transition-smooth);
+  box-shadow: var(--shadow-premium);
 }
 
 .api-endpoint-card:hover {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(15, 23, 42, 0.45);
+  border-color: var(--color-blue);
 }
 
 .endpoint-header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .method {
-  background: rgba(6, 182, 212, 0.15);
-  color: var(--color-accent);
-  padding: 0.25rem 0.625rem;
+  background: rgba(27, 117, 255, 0.12); /* Blue badge tint */
+  color: var(--color-blue);
+  padding: 0.25rem 0.65rem;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
@@ -711,25 +905,27 @@ body {
 
 .path {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--text-main);
 }
 
 .endpoint-desc {
   color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-bottom: 0.75rem;
-  line-height: 1.4;
+  font-size: 0.925rem;
+  margin-bottom: 0.85rem;
+  line-height: 1.5;
 }
 
 .endpoint-example {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  font-size: 0.85rem;
+  background: var(--bg-main);
+  border-radius: 10px;
+  padding: 0.85rem 1.15rem;
+  font-size: 0.875rem;
   color: var(--text-muted);
-  border-left: 3px solid var(--color-secondary);
+  border-left: 4px solid var(--color-blue);
+  line-height: 1.4;
+  transition: background-color 0.4s ease;
 }
 
 .endpoint-example strong {
@@ -739,8 +935,9 @@ body {
 
 .endpoint-example code {
   font-family: 'Courier New', Courier, monospace;
-  color: var(--color-primary);
+  color: var(--color-blue);
   word-break: break-all;
+  font-weight: 600;
 }
 
 .endpoint-example ul {
@@ -748,7 +945,7 @@ body {
   margin-top: 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .endpoint-example li {
@@ -756,14 +953,133 @@ body {
 }
 
 .font-small {
-  font-size: 0.825rem;
+  font-size: 0.85rem;
 }
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
 
 .app-footer {
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   border-top: 1px solid var(--border-color);
   padding-top: 1.5rem;
   margin-top: auto;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Responsiveness & Mobile layout tweaks (iPhone 14 Viewport Optimized)
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    padding: 1.5rem 1rem;
+    gap: 1.5rem;
+  }
+  
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .brand h1 {
+    font-size: 1.6rem;
+  }
+}
+
+/* Mobile Screen Sizes (e.g. iPhone 14 390px width and below) */
+@media (max-width: 480px) {
+  .app-container {
+    padding: 1rem 0.75rem; /* Compact padding to maximize screen width */
+    gap: 1rem;
+  }
+  
+  .brand h1 {
+    font-size: 1.45rem;
+  }
+  
+  .brand .icon {
+    font-size: 1.85rem;
+  }
+  
+  .bridge-status {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .tab-navigation.glass-card {
+    border-radius: 12px;
+    padding: 0.2rem;
+  }
+  
+  .tab-btn {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.8rem; /* Avoid wrapping on small viewports */
+    border-radius: 10px;
+    gap: 0.35rem;
+  }
+  
+  .tab-btn .btn-icon {
+    font-size: 0.9rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.3rem;
+  }
+
+  /* Single-column stack on mobile */
+  .speakers-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .glass-card {
+    padding: 1.25rem;
+    border-radius: 20px; /* Slightly reduced corner rounding on mobile */
+  }
+
+  .speaker-room {
+    font-size: 1.25rem;
+  }
+
+  .btn-play-pause-circle {
+    width: 42px;
+    height: 42px;
+    font-size: 1rem;
+  }
+
+  .volume-slider {
+    height: 10px; /* Thicker track for touchscreen control */
+  }
+
+  .volume-slider::-webkit-slider-thumb {
+    width: 22px; /* Enlarge thumb for mobile touch targets */
+    height: 22px;
+  }
+
+  .speaker-card-footer {
+    padding-top: 1rem;
+    gap: 0.5rem;
+  }
+
+  .favorites-dropdown {
+    padding: 0.6rem 1.8rem 0.6rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .btn-tts-trigger {
+    padding: 0.6rem 0.85rem;
+    font-size: 0.8rem;
+  }
 }

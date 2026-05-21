@@ -20,6 +20,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabButtons = document.querySelectorAll('.tab-btn');
   const tabContents = document.querySelectorAll('.tab-content');
 
+  // Theme Toggle Elements
+  const themeToggle = document.getElementById('theme-toggle');
+  const themeIcon = themeToggle ? themeToggle.querySelector('.theme-icon') : null;
+
+  // Initialize theme from localStorage
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  if (currentTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+    if (themeIcon) themeIcon.textContent = '☀️';
+  } else {
+    document.body.classList.remove('dark-mode');
+    if (themeIcon) themeIcon.textContent = '🌙';
+  }
+
+  if (themeToggle) {
+    themeToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      if (themeIcon) themeIcon.textContent = isDark ? '☀️' : '🌙';
+    });
+  }
+
   // TTS Modal Elements
   const ttsModal = document.getElementById('tts-modal');
   const btnCloseModal = document.getElementById('btn-close-modal');
@@ -222,34 +246,34 @@ document.addEventListener('DOMContentLoaded', () => {
       const favoritesOptions = buildFavoritesOptions(room.name, focusedDropdowns[room.name]);
 
       card.innerHTML = `
-        <div class="speaker-info">
-          <span class="speaker-room">${escapeHtml(room.name)}</span>
-          <span class="speaker-ip">${escapeHtml(room.ip)}</span>
-        </div>
-        <div class="speaker-controls">
-          <div class="speaker-main-actions">
-            <button class="btn btn-secondary btn-icon-only btn-play-pause" title="${playText}" data-room="${escapeHtml(room.name)}" data-playing="${room.isPlaying}">
-              ${playIcon}
-            </button>
-            <button class="btn btn-secondary btn-icon-only btn-tts-modal" title="Sprachansage (TTS)" data-room="${escapeHtml(room.name)}">
-              📢
-            </button>
+        <div class="speaker-card-header">
+          <div class="speaker-info">
+            <span class="speaker-room">${escapeHtml(room.name)}</span>
+            <span class="speaker-ip">${escapeHtml(room.ip)}</span>
           </div>
+          <button class="btn-play-pause-circle btn-play-pause ${room.isPlaying ? 'playing' : ''}" title="${playText}" data-room="${escapeHtml(room.name)}" data-playing="${room.isPlaying}">
+            ${playIcon}
+          </button>
         </div>
-        <div class="speaker-volume-control">
-          <div class="volume-header">
+        <div class="speaker-volume-section">
+          <div class="volume-labels">
             <span>Lautstärke</span>
-            <span class="volume-value-text" id="volume-val-${normalizeSelector(room.name)}">${room.volume}%</span>
+            <span class="volume-val" id="volume-val-${normalizeSelector(room.name)}">${room.volume}%</span>
           </div>
-          <div class="volume-slider-wrapper">
+          <div class="volume-slider-container">
             <span class="volume-icon" id="volume-icon-${normalizeSelector(room.name)}">${volIcon}</span>
-            <input type="range" class="volume-slider" data-room="${escapeHtml(room.name)}" min="0" max="100" value="${dragging ? card.querySelector('.volume-slider').value : room.volume}">
+            <input type="range" class="volume-slider" data-room="${escapeHtml(room.name)}" min="0" max="100" value="${dragging ? card.querySelector('.volume-slider').value : room.volume}" style="--value: ${dragging ? card.querySelector('.volume-slider').value : room.volume}%">
           </div>
         </div>
-        <div class="speaker-features">
-          <select class="favorites-dropdown" data-room="${escapeHtml(room.name)}">
-            ${favoritesOptions}
-          </select>
+        <div class="speaker-card-footer">
+          <div class="favorites-select-wrapper">
+            <select class="favorites-dropdown" data-room="${escapeHtml(room.name)}">
+              ${favoritesOptions}
+            </select>
+          </div>
+          <button class="btn btn-secondary btn-tts-modal btn-tts-trigger" title="Sprachansage (TTS)" data-room="${escapeHtml(room.name)}">
+            📢 Ansage
+          </button>
         </div>
       `;
     });
@@ -364,6 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
       slider.oninput = (e) => {
         const val = e.target.value;
         valText.textContent = `${val}%`;
+        slider.style.setProperty('--value', val + '%');
 
         // Update speaker volume icon dynamically on drag
         let icon = '🔈';
