@@ -750,32 +750,6 @@ async function getFavorites(roomName) {
 }
 
 /**
- * Safely escapes string properties of a track metadata object for inclusion in XML.
- * @param {object} track - The raw track/favorite object.
- * @returns {object|null} The escaped track object.
- */
-function escapeTrackForXml(track) {
-  if (!track) return null;
-  const escapeXml = (unsafe) => {
-    if (unsafe === undefined || unsafe === null) return undefined;
-    return String(unsafe)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-  };
-  return {
-    ItemId: escapeXml(track.ItemId),
-    ParentId: escapeXml(track.ParentId),
-    UpnpClass: escapeXml(track.UpnpClass),
-    CdUdn: escapeXml(track.CdUdn),
-    AlbumArtUri: escapeXml(track.AlbumArtUri),
-    Title: escapeXml(track.Title)
-  };
-}
-
-/**
  * Plays a favorite by name.
  */
 async function playFavorite(roomName, favoriteName) {
@@ -796,9 +770,12 @@ async function playFavorite(roomName, favoriteName) {
 
     const uri = fav.Uri;
     const trackObj = fav.TrackMetadata;
-    const upnpClass = fav.UpnpClass || (trackObj && trackObj.UpnpClass) || '';
 
-    const isContainer = upnpClass.startsWith('object.container.');
+    // Determine container vs stream from the INNER metadata class and URI prefix.
+    // The outer fav.UpnpClass is always the generic 'sonos-favorite' class.
+    const innerClass = (trackObj && trackObj.UpnpClass) || '';
+    const isContainer = innerClass.startsWith('object.container.') ||
+                        uri.startsWith('x-rincon-cpcontainer:');
     console.log(`[Sonos Debug] Playing favorite "${fav.Title}" (isContainer: ${isContainer})`);
     console.log(`[Sonos Debug] URI: "${uri}"`);
     console.log(`[Sonos Debug] trackObj:`, JSON.stringify(trackObj));
@@ -813,15 +790,16 @@ async function playFavorite(roomName, favoriteName) {
         console.log(`[Sonos Debug] Clear queue failed (ignoring):`, e.message);
       }
       
-      // 2. Add container to queue
-      const metadataXml = trackObj ? MetaDataHelper.TrackToMetaData(escapeTrackForXml(trackObj)) : '';
-      console.log(`[Sonos Debug] Generated Metadata XML for container:`, metadataXml);
+      // 2. Add container to queue – pass trackObj as an object so the library's
+      //    SOAP serializer calls TrackToMetaData() + EncodeXml() internally.
+      const metadataObj = trackObj || '';
+      console.log(`[Sonos Debug] Adding container to queue with metadata object...`);
       
       console.log(`[Sonos Debug] Calling AddURIToQueue...`);
       const queueRes = await device.AVTransportService.AddURIToQueue({
         InstanceID: 0,
         EnqueuedURI: uri,
-        EnqueuedURIMetaData: metadataXml,
+        EnqueuedURIMetaData: metadataObj,
         DesiredFirstTrackNumberEnqueued: 1,
         EnqueueAsNext: true
       });
@@ -837,15 +815,16 @@ async function playFavorite(roomName, favoriteName) {
       await device.Play();
       console.log(`[Sonos Debug] Play succeeded.`);
     } else {
-      // Stream or individual track
-      const metadataXml = trackObj ? MetaDataHelper.TrackToMetaData(escapeTrackForXml(trackObj)) : '';
-      console.log(`[Sonos Debug] Generated Metadata XML for stream/track:`, metadataXml);
+      // Stream or individual track – pass trackObj as an object so the library's
+      // SOAP serializer handles TrackToMetaData() + EncodeXml() correctly.
+      const metadataObj = trackObj || '';
+      console.log(`[Sonos Debug] Setting transport URI with metadata object...`);
       
       console.log(`[Sonos Debug] Calling SetAVTransportURI...`);
       const setUriRes = await device.AVTransportService.SetAVTransportURI({
         InstanceID: 0,
         CurrentURI: uri,
-        CurrentURIMetaData: metadataXml
+        CurrentURIMetaData: metadataObj
       });
       console.log(`[Sonos Debug] SetAVTransportURI succeeded:`, JSON.stringify(setUriRes));
       

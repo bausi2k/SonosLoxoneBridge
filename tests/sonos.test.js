@@ -236,7 +236,10 @@ describe('Sonos Integration', () => {
     expect(mockDevice.AVTransportService.SetAVTransportURI).toHaveBeenCalledWith({
       InstanceID: 0,
       CurrentURI: 'x-sonosapi-stream:kr',
-      CurrentURIMetaData: expect.stringContaining('Klassik Radio')
+      CurrentURIMetaData: expect.objectContaining({
+        Title: 'Klassik Radio',
+        UpnpClass: 'object.item.audioItem.audioBroadcast'
+      })
     });
     expect(mockDevice.Play).toHaveBeenCalledTimes(2);
     expect(sendPlayStatus).toHaveBeenCalledWith('Living Room', true);
@@ -315,20 +318,29 @@ describe('Sonos Integration', () => {
     expect(mockDevice.AVTransportService.SetAVTransportURI).toHaveBeenCalledWith({
       InstanceID: 0,
       CurrentURI: 'x-sonosapi-stream:kr',
-      CurrentURIMetaData: expect.stringContaining('Klassik Radio')
+      CurrentURIMetaData: expect.objectContaining({
+        Title: 'Klassik Radio',
+        UpnpClass: 'object.item.audioItem.audioBroadcast'
+      })
     });
     expect(mockDevice.Play).toHaveBeenCalled();
     expect(sendPlayStatus).toHaveBeenCalledWith('Living Room', true);
   });
 
-  test('should safely escape special characters (ampersand, etc.) in favorite titles during metadata generation', async () => {
+  test('should pass track object with special characters to library for proper SOAP encoding', async () => {
     const playedTitle = await playFavorite('wohnzimmer', 'Superfly.fm 98.3 (Soul & R&B)');
     expect(playedTitle).toBe('Superfly.fm 98.3 (Soul & R&B)');
     
+    // The library's SOAP serializer handles XML escaping internally,
+    // so we pass the raw Track object with unescaped title.
     expect(mockDevice.AVTransportService.SetAVTransportURI).toHaveBeenCalledWith({
       InstanceID: 0,
       CurrentURI: 'x-sonosapi-stream:s68225',
-      CurrentURIMetaData: expect.stringContaining('<dc:title>Superfly.fm 98.3 (Soul &amp; R&amp;B)</dc:title>')
+      CurrentURIMetaData: expect.objectContaining({
+        Title: 'Superfly.fm 98.3 (Soul & R&B)',
+        UpnpClass: 'object.item.audioItem.audioBroadcast',
+        CdUdn: 'SA_RINCON65031_'
+      })
     });
     expect(mockDevice.Play).toHaveBeenCalled();
     expect(sendPlayStatus).toHaveBeenCalledWith('Living Room', true);
@@ -342,7 +354,10 @@ describe('Sonos Integration', () => {
     expect(mockDevice.AVTransportService.AddURIToQueue).toHaveBeenCalledWith({
       InstanceID: 0,
       EnqueuedURI: 'x-rincon-cpcontainer:spotify:playlist',
-      EnqueuedURIMetaData: expect.stringContaining('Baby Einschlafmusik'),
+      EnqueuedURIMetaData: expect.objectContaining({
+        Title: 'Baby Einschlafmusik',
+        UpnpClass: 'object.container.playlistContainer'
+      }),
       DesiredFirstTrackNumberEnqueued: 1,
       EnqueueAsNext: true
     });
