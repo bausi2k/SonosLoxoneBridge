@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SonosLoxoneBridge - Modern Smart Home Bridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔊</text></svg>">
+</head>
+<body>
+  <div class="background-glow bg-glow-1"></div>
+  <div class="background-glow bg-glow-2"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="icon">🔊</span>
+        <h1>Sonos<span>Loxone</span>Bridge</h1>
+      </div>
+      <div class="bridge-status">
+        <span class="status-indicator online"></span>
+        <span class="status-text">Bridge Online (<span id="bridge-ip-display">127.0.0.1</span>)</span>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="app-main">
+      <!-- Speakers Section -->
+      <section class="section-speakers">
+        <div class="section-header">
+          <h2>Sonos Lautsprecher</h2>
+          <button id="btn-refresh" class="btn btn-secondary">
+            <span class="btn-icon">🔄</span> Aktualisieren
+          </button>
+        </div>
+
+        <div id="speakers-grid" class="speakers-grid">
+          <!-- Loading placeholder -->
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Suche nach Sonos-Lautsprechern im Netzwerk...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings / Sidebar Section -->
+      <section class="section-sidebar">
+        <!-- Settings Card -->
+        <div class="glass-card settings-card">
+          <h3>Einstellungen</h3>
+          <form id="settings-form">
+            <div class="form-group">
+              <label for="settings-port">Bridge HTTP Port</label>
+              <input type="number" id="settings-port" name="port" required placeholder="8888">
+            </div>
+
+            <div class="form-group">
+              <label for="settings-loxone-ip">Loxone Miniserver IP</label>
+              <input type="text" id="settings-loxone-ip" name="loxoneIp" required placeholder="e.g. 192.168.1.10">
+            </div>
+
+            <div class="form-group">
+              <label for="settings-loxone-port">Loxone UDP Input Port</label>
+              <input type="number" id="settings-loxone-port" name="loxonePort" required placeholder="7777">
+            </div>
+
+            <div class="form-group">
+              <label for="settings-tts-language">TTS Standardsprache</label>
+              <select id="settings-tts-language" name="ttsLanguage">
+                <option value="de">Deutsch (de)</option>
+                <option value="en">English (en)</option>
+                <option value="fr">Français (fr)</option>
+                <option value="it">Italiano (it)</option>
+                <option value="es">Español (es)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="settings-static-ips">Statische Lautsprecher IPs (Optional)</label>
+              <textarea id="settings-static-ips" name="staticSpeakerIps" rows="3" placeholder="Ein Eintrag pro Zeile, z.B.&#10;192.168.1.50&#10;192.168.1.51"></textarea>
+              <small class="help-text">Wichtig, falls Auto-Discovery im Docker-Container blockiert ist.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="settings-aliases">Raum-Aliases (Optional)</label>
+              <textarea id="settings-aliases" name="roomAliases" rows="3" placeholder='JSON Format, z.B.&#10;{&#10;  "wohnzimmer": "Living Room"&#10;}'></textarea>
+              <small class="help-text">Verknüpft Loxone-Bezeichnungen mit echten Sonos-Raumnamen.</small>
+            </div>
+
+            <div class="settings-actions">
+              <button type="submit" id="btn-save-settings" class="btn btn-primary">
+                <span class="btn-icon">💾</span> Einstellungen speichern
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Integration Helper Card -->
+        <div class="glass-card integration-card">
+          <h3>Loxone Integration</h3>
+          <p>Lade die fertig generierte XML-Importvorlage herunter, um alle virtuellen UDP-Eingänge mit einem Klick in Loxone Config anzulegen.</p>
+          <a href="/api/loxone-export" download class="btn btn-secondary btn-full">
+            <span class="btn-icon">📥</span> XML-Importvorlage laden
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>SonosLoxoneBridge v1.0.0 &bull; Lokale Steuerung ohne Cloud &bull; Erstellt mit ❤️</p>
+    </footer>
+  </div>
+
+  <!-- TTS Popup Modal -->
+  <div id="tts-modal" class="modal-overlay">
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <h4>Sprachansage (TTS)</h4>
+        <button id="btn-close-modal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Geben Sie einen Text ein, der in Raum <strong id="modal-room-name">...</strong> angesagt werden soll.</p>
+        <div class="form-group">
+          <label for="tts-text">Ansagetext</label>
+          <input type="text" id="tts-text" placeholder="z. B. Die Waschmaschine ist fertig." maxlength="200" required>
+        </div>
+        <div class="form-group">
+          <label for="tts-volume">Lautstärke für die Ansage (%)</label>
+          <input type="range" id="tts-volume" min="5" max="100" value="40">
+          <span id="tts-volume-value">40%</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-send-tts" class="btn btn-primary">
+          📢 Ansage abspielen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="notification-toast" class="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

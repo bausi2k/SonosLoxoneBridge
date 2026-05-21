@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log
+config/settings.json
+tests
+.git
+.gitignore
+README.md
+CHANGES.md
+iniprompt.md
+Dockerfile
+docker-compose.yml
+public/temp/tts/*
+!public/temp/tts/.gitkeep

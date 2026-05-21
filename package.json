@@ -1,0 +1,34 @@
+{
+  "name": "sonosloxonebridge",
+  "version": "1.0.0",
+  "description": "Modern lightweight bridge between Sonos local LAN speakers and Loxone Miniserver",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node src/app.js",
+    "test": "jest --runInBand --detectOpenHandles"
+  },
+  "keywords": [
+    "sonos",
+    "loxone",
+    "bridge",
+    "smarthome",
+    "upnp",
+    "udp"
+  ],
+  "author": "Klaus Gruber",
+  "license": "MIT",
+  "dependencies": {
+    "@svrooij/sonos": "^2.5.0",
+    "express": "^4.19.2",
+    "google-tts-api": "^2.0.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "verbose": true
+  }
+}

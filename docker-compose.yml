@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  sonosloxonebridge:
+    build: .
+    image: sonosloxonebridge:latest
+    container_name: sonosloxonebridge
+    restart: unless-stopped
+    # Use host networking mode to allow UPnP/SSDP Sonos auto-discovery on the LAN
+    network_mode: host
+    volumes:
+      # Map the local config folder for persistent JSON settings
+      - ./config:/app/config
+    environment:
+      - NODE_ENV=production
