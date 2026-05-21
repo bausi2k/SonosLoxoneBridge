@@ -62,7 +62,7 @@ describe('Express REST & Inbound API', () => {
   });
 
   describe('Frontend REST API', () => {
-    test('GET / should return index.html with tab structure', async () => {
+    test('GET / should return index.html with tab structure and ambient blobs', async () => {
       const res = await request(app).get('/');
       expect(res.status).toBe(200);
       expect(res.text).toContain('<div class="tab-navigation');
@@ -73,6 +73,10 @@ describe('Express REST & Inbound API', () => {
       expect(res.text).toContain('id="tab-settings"');
       expect(res.text).toContain('id="tab-manual"');
       expect(res.text).toContain('id="theme-toggle"');
+      expect(res.text).toContain('<div class="bg-blob bg-blob-1"></div>');
+      expect(res.text).toContain('<div class="bg-blob bg-blob-2"></div>');
+      expect(res.text).toContain('<div class="bg-blob bg-blob-3"></div>');
+      expect(res.text).toContain('<div class="bg-blob bg-blob-4"></div>');
     });
 
     test('GET /api/status should return system status', async () => {
