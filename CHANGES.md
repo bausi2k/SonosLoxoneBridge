@@ -1,6 +1,15 @@
 # Changes SonosLoxoneBridge
 
-## [Unreleased] - 2026-05-21
+## [0.2.0] - 2026-05-26
+- **Mobiles Responsive Design**:
+  - Optimierung des Player-Layouts für schmale Mobilgeräte (wie iPhone 17 Pro und iPhone SE) zur Behebung von horizontalem Überlaufen.
+  - Implementierung eines automatischen vertikalen Stackings der Footer-Aktionen (`favorites-dropdown` und `btn-tts-trigger`) auf Handys.
+  - Skalierung und Anpassung der Buttons sowie Abstände in der Steuerungskomponente (`.media-controls-section`) auf mobilen Viewports.
+  - Absicherung der Tab-Navigation auf mobilen Endgeräten gegen unerwünschte Zeilenumbrüche.
+- **Fehlerbehebungen**:
+  - Korrektur von CSS play-pause Button-Overrides (Behebung der Desktop `!important` Sperre in mobilen CSS-Stilen).
+
+## [0.1.0] - 2026-05-21
 - Initialisiertes Git-Repository auf Branch `feature/bridge-implementation`.
 - Erstellte `.gitignore` für Node.js/Docker.
 - Konfigurierte `.gitkeep` für temporäre TTS-Verzeichnisse.

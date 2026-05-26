@@ -19,6 +19,7 @@ Dieses Projekt dient als moderner Ersatz für die veraltete `node-sonos-http-api
   - Automatischer Cleanup-Job zur Bereinigung temporärer Sprachdateien.
 - **Premium Web-Dashboard**:
   - **Neues Apple Glassmorphism-Design**: Minimalistischer, moderner Look mit flüssig animierten Hintergrund-Blobs und responsivem Spalten-Layout in hellen (Linen) und dunklen (Titanium) Themes. Kräftige orange Highlights runden das Premium-Gefühl ab.
+  - **Mobile- & Responsive-Optimierung**: Vollständig optimiert für schmale Mobilgeräte (wie iPhone 17 Pro und iPhone SE). Stacking-Mechanismen für Steuerelemente im Footer und angepasste Icon-/Button-Größen verhindern horizontalen Überlauf und bieten erstklassigen Touch-Komfort.
   - **Zentrierte Player-Cards**: Fokus auf das Album-Artwork (Quadratische 1:1 Ansicht) mit eleganten Hover-Effekten und integrierten Titel- und Interpreten-Infos.
   - **Erweiterte Steuerung**: Direktes Toggling von Wiedergabemodi (Zufallswiedergabe (Shuffle), Wiederholen (Repeat)) sowie Vorwärts- und Rückwärts-Titelsteuerung (Next / Previous).
   - **Diagnose-Overlay**: Ein Klick auf das Info-Symbol zeigt dynamisch geladene Hardware-Diagnosedaten des Lautsprechers (Modellname, Seriennummer, Softwareversion, MAC-Adresse) ohne Layout-Verschiebung an.
