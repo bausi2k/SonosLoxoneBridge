@@ -1516,17 +1516,23 @@ body {
   .tab-navigation.glass-card {
     border-radius: 12px;
     padding: 0.2rem;
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
   }
   
   .tab-btn {
-    padding: 0.6rem 0.5rem;
-    font-size: 0.8rem; /* Avoid wrapping on small viewports */
+    padding: 0.6rem 0.4rem;
+    font-size: 0.75rem; /* Avoid wrapping on small viewports */
     border-radius: 10px;
-    gap: 0.35rem;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
   }
   
   .tab-btn .btn-icon {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   .section-header h2 {
@@ -1548,10 +1554,27 @@ body {
     font-size: 1.25rem;
   }
 
-  .btn-play-pause-circle {
-    width: 42px;
-    height: 42px;
-    font-size: 1rem;
+  /* Control buttons styling on mobile */
+  .media-controls-section {
+    gap: 0.5rem;
+  }
+
+  .control-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .control-btn .material-symbols-outlined {
+    font-size: 1.3rem;
+  }
+
+  .control-btn.btn-play-pause-circle {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .control-btn.btn-play-pause-circle .material-symbols-outlined {
+    font-size: 1.5rem;
   }
 
   .volume-slider {
@@ -1563,18 +1586,30 @@ body {
     height: 22px;
   }
 
+  /* Vertical stacking for select and TTS button to prevent horizontal overflow */
   .speaker-card-footer {
+    flex-direction: column;
+    align-items: stretch;
     padding-top: 1rem;
-    gap: 0.5rem;
+    gap: 0.75rem;
+  }
+
+  .favorites-select-wrapper {
+    width: 100%;
   }
 
   .favorites-dropdown {
-    padding: 0.6rem 1.8rem 0.6rem 0.65rem;
-    font-size: 0.8rem;
+    width: 100%;
+    padding: 0.65rem 1.8rem 0.65rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 12px;
   }
 
   .btn-tts-trigger {
-    padding: 0.6rem 0.85rem;
-    font-size: 0.8rem;
+    width: 100%;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    border-radius: 12px;
   }
 }
