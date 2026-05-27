@@ -21,7 +21,7 @@ const {
   parseBatteryXml,
   updateDeviceBatteryStatus
 } = require('../src/sonos');
-const { sendPlayStatus, sendVolumeStatus } = require('../src/loxone');
+const { sendPlayStatus, sendVolumeStatus, normalizeRoomName } = require('../src/loxone');
 const { generateTts } = require('../src/tts');
 
 // Mock @svrooij/sonos
@@ -119,6 +119,8 @@ describe('Sonos Integration', () => {
     });
 
     await initializeSonos();
+    // Allow background updates to complete
+    await new Promise(resolve => setImmediate(resolve));
   });
 
   afterEach(() => {
@@ -156,7 +158,8 @@ describe('Sonos Integration', () => {
         macAddress: ''
       },
       batteryLevel: null,
-      isCharging: false
+      isCharging: false,
+      isOffline: false
     });
   });
 
@@ -577,6 +580,78 @@ describe('Sonos Integration', () => {
 
       expect(httpSpy).not.toHaveBeenCalled();
       httpSpy.mockRestore();
+    });
+  });
+
+  describe('Offline Speaker Handling and Backoff', () => {
+    test('should mark device offline and set backoff when network call fails with network error', async () => {
+      const dev = getDevice('Living Room');
+      dev.isOffline = undefined;
+      dev.failedAttempts = 0;
+      dev.offlineUntil = 0;
+      
+      const { updateDeviceState, deviceStates } = require('../src/sonos');
+      const norm = normalizeRoomName(dev.Name);
+      if (deviceStates[norm]) {
+        deviceStates[norm].isOffline = false;
+      }
+
+      // Mock failure AFTER initialization so startup doesn't fail
+      mockDevice.RenderingControlService.GetVolume.mockRejectedValueOnce(
+        new Error('network timeout at: http://192.168.1.50:1400')
+      );
+
+      // Trigger update/polling
+      await updateDeviceState(dev);
+
+      expect(dev.isOffline).toBe(true);
+      expect(dev.failedAttempts).toBe(1);
+      expect(dev.offlineUntil).toBeGreaterThan(Date.now());
+      
+      const states = getRoomStates();
+      const lr = states.find(s => s.name === 'Living Room');
+      expect(lr.isOffline).toBe(true);
+    });
+
+    test('should skip state updating while offline backoff is active', async () => {
+      const dev = getDevice('Living Room');
+      dev.isOffline = true;
+      dev.failedAttempts = 1;
+      dev.offlineUntil = Date.now() + 10000; // 10s backoff
+
+      mockDevice.RenderingControlService.GetVolume.mockClear();
+
+      const { updateDeviceState } = require('../src/sonos');
+      await updateDeviceState(dev);
+
+      // Should skip getting volume
+      expect(mockDevice.RenderingControlService.GetVolume).not.toHaveBeenCalled();
+    });
+
+    test('should mark device online and clear backoff when connection succeeds again', async () => {
+      const dev = getDevice('Living Room');
+      dev.isOffline = true;
+      dev.failedAttempts = 2;
+      dev.offlineUntil = Date.now() - 1000; // expired
+
+      const { updateDeviceState, deviceStates } = require('../src/sonos');
+      const norm = normalizeRoomName(dev.Name);
+      if (deviceStates[norm]) {
+        deviceStates[norm].isOffline = true;
+      }
+
+      mockDevice.RenderingControlService.GetVolume.mockResolvedValueOnce({ CurrentVolume: 30 });
+
+      await updateDeviceState(dev);
+
+      expect(dev.isOffline).toBe(false);
+      expect(dev.failedAttempts).toBe(0);
+      expect(dev.offlineUntil).toBe(0);
+      
+      const states = getRoomStates();
+      const lr = states.find(s => s.name === 'Living Room');
+      expect(lr.isOffline).toBe(false);
+      expect(lr.volume).toBe(30);
     });
   });
 });

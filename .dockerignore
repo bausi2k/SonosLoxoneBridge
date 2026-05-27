@@ -11,3 +11,4 @@ Dockerfile
 docker-compose.yml
 public/temp/tts/*
 !public/temp/tts/.gitkeep
+node-sonos-http-api

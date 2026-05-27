@@ -1,5 +1,17 @@
 # Changes SonosLoxoneBridge
 
+## [0.3.0] - 2026-05-27
+- **Robustes Offline-Handling für batteriebetriebene Lautsprecher**:
+  - Automatisches Erkennen von Netzwerk-Timeouts (`ETIMEDOUT`, `EHOSTUNREACH`, `ECONNREFUSED` etc.) bei batteriebetriebenen Lautsprechern.
+  - Implementierung eines exponentiellen Backoffs (Polling-Aussetzung), um die Batterien zu schonen.
+  - Verhinderung von API-Hängern (z. B. bei Favoriten-Abfragen) durch sofortige Rückgabe leerer Ergebnisse für Offline-Geräte.
+  - Integration von Platzhaltern für statisch definierte Lautsprecher, die beim Systemstart offline sind.
+- **Erweiterte Loxone- & Preset-Integration**:
+  - Unterstützung von jishi-Presets zur Definition von Raumgruppen, Lautstärken, Wiedergabemodi und Sleep-Timern via UI und API.
+  - Neue Inbound-Befehle wie `/tunein/play/:stationId`, `/leave`, `/clip/:file/:volume?` und preset-gestützte API.
+- **Stabilisierung der Testumgebung**:
+  - Vermeidung von Race Conditions bei asynchronen Hintergrund-Updates und Optimierung der Test-Lifecycle-Isolation.
+
 ## [0.2.0] - 2026-05-26
 - **Mobiles Responsive Design**:
   - Optimierung des Player-Layouts für schmale Mobilgeräte (wie iPhone 17 Pro und iPhone SE) zur Behebung von horizontalem Überlaufen.
