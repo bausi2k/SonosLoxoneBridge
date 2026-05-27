@@ -12,6 +12,33 @@ let pollInterval = null;
 // Track previous states to avoid redundant UDP packets
 const deviceStates = {};
 
+function markDeviceOffline(device, err) {
+  if (!device.isOffline) {
+    console.log(`[Sonos] Speaker "${device.Name || device.ip}" is offline:`, err.message);
+    device.isOffline = true;
+    const norm = normalizeRoomName(device.Name || '');
+    if (deviceStates[norm]) {
+      deviceStates[norm].isOffline = true;
+    }
+  }
+  device.failedAttempts = (device.failedAttempts || 0) + 1;
+  const backoffSeconds = Math.min(device.failedAttempts * 10, 300);
+  device.offlineUntil = Date.now() + backoffSeconds * 1000;
+}
+
+function markDeviceOnline(device) {
+  if (device.isOffline) {
+    console.log(`[Sonos] Speaker "${device.Name || device.ip}" is back online.`);
+    device.isOffline = false;
+    const norm = normalizeRoomName(device.Name || '');
+    if (deviceStates[norm]) {
+      deviceStates[norm].isOffline = false;
+    }
+  }
+  device.failedAttempts = 0;
+  device.offlineUntil = 0;
+}
+
 /**
  * Utility to extract all details of an error object (including SOAP/network properties)
  * and return a JSON-friendly object.
@@ -224,13 +251,20 @@ async function updateDeviceBatteryStatus(device) {
   }
 }
 
-/**
- * Fetches volume and play status for a device and updates state.
- * @param {SonosDevice} device - The Sonos device.
- */
 async function updateDeviceState(device) {
   const norm = normalizeRoomName(device.Name);
+  
+  if (device.isOffline && device.offlineUntil && Date.now() < device.offlineUntil) {
+    return; // Skip if offline and backoff timer has not expired
+  }
+
   try {
+    if (device.Name === device.ip) {
+      // It was a placeholder offline speaker, try loading data
+      await device.LoadDeviceData();
+      console.log(`[Sonos] Loaded data for previously offline speaker: "${device.Name}" (${device.ip})`);
+    }
+
     if (!device.diagnostics) {
       loadDeviceDiagnostics(device).catch(() => {});
     }
@@ -266,8 +300,21 @@ async function updateDeviceState(device) {
     };
 
     updateDeviceBatteryStatus(device).catch(() => {});
+    markDeviceOnline(device);
   } catch (err) {
-    console.warn(`[Sonos] Failed to fetch initial state for speaker "${device.Name}":`, err.message);
+    const isNetworkError = err.code === 'ECONNREFUSED' || 
+                           err.code === 'EHOSTUNREACH' || 
+                           err.code === 'ETIMEDOUT' || 
+                           err.name === 'FetchError' || 
+                           err.message.includes('timeout') ||
+                           err.message.includes('fetch');
+    
+    if (isNetworkError) {
+      markDeviceOffline(device, err);
+    } else {
+      console.warn(`[Sonos] Failed to fetch state for speaker "${device.Name}":`, err.message);
+    }
+    
     const prev = deviceStates[norm] || {};
     deviceStates[norm] = {
       volume: 0,
@@ -275,7 +322,8 @@ async function updateDeviceState(device) {
       currentTrack: null,
       playMode: 'NORMAL',
       batteryLevel: prev.batteryLevel !== undefined ? prev.batteryLevel : null,
-      isCharging: prev.isCharging !== undefined ? prev.isCharging : false
+      isCharging: prev.isCharging !== undefined ? prev.isCharging : false,
+      isOffline: true
     };
     updateDeviceBatteryStatus(device).catch(() => {});
   }
@@ -302,6 +350,10 @@ async function initializeSonos() {
         console.log(`[Sonos] Added static speaker: "${device.Name}" (${ip})`);
       } catch (err) {
         console.error(`[Sonos] Failed to connect to static speaker at ${ip}:`, err.message);
+        const device = new SonosDevice(ip);
+        device.Name = ip; // placeholder name
+        devices.push(device);
+        markDeviceOffline(device, err);
       }
     }
   } else {
@@ -364,52 +416,20 @@ function getDevice(roomName) {
 async function pollStates() {
   for (const device of devices) {
     const norm = normalizeRoomName(device.Name);
-    try {
-      if (!device.diagnostics) {
-        loadDeviceDiagnostics(device).catch(() => {});
-      }
-      // 1. Get Volume
-      const volRes = await device.RenderingControlService.GetVolume({ InstanceID: 0, Channel: 'Master' });
-      const volume = parseInt(volRes.CurrentVolume, 10);
-      
-      // 2. Get Play State
-      const transportInfo = await device.AVTransportService.GetTransportInfo({ InstanceID: 0 });
-      const isPlaying = transportInfo.CurrentTransportState === 'PLAYING';
+    const prev = { ...(deviceStates[norm] || {}) };
 
-      // 3. Get Track Info
-      let currentTrack = null;
-      try {
-        const posInfo = await device.AVTransportService.GetPositionInfo({ InstanceID: 0 });
-        currentTrack = parseTrackInfo(posInfo);
-      } catch (e) {
-        // ignore
-      }
+    await updateDeviceState(device);
 
-      // Get PlayMode
-      let playMode = 'NORMAL';
-      try {
-        const settings = await device.AVTransportService.GetTransportSettings({ InstanceID: 0 });
-        playMode = settings.PlayMode || 'NORMAL';
-      } catch (e) {
-        // ignore
-      }
+    const curr = deviceStates[norm] || {};
+    if (curr.isOffline) {
+      continue; // Skip triggering Loxone UDP outputs if the device is currently offline
+    }
 
-      // 4. Compare and send if changed
-      const prev = deviceStates[norm] || { volume: -1, isPlaying: null, currentTrack: null, playMode: 'NORMAL', batteryLevel: null, isCharging: false };
-      if (prev.volume !== volume) {
-        sendVolumeStatus(device.Name, volume);
-        prev.volume = volume;
-      }
-      if (prev.isPlaying !== isPlaying) {
-        sendPlayStatus(device.Name, isPlaying);
-        prev.isPlaying = isPlaying;
-      }
-      prev.currentTrack = currentTrack;
-      prev.playMode = playMode;
-      deviceStates[norm] = prev;
-      updateDeviceBatteryStatus(device).catch(() => {});
-    } catch (err) {
-      // Silent error during polling (speaker offline, etc.)
+    if (prev.volume !== curr.volume && curr.volume !== undefined) {
+      sendVolumeStatus(device.Name, curr.volume);
+    }
+    if (prev.isPlaying !== curr.isPlaying && curr.isPlaying !== undefined) {
+      sendPlayStatus(device.Name, curr.isPlaying);
     }
   }
 }
@@ -677,76 +697,93 @@ function parseTrackInfo(posInfo) {
   }
 }
 
-/**
- * Retrieves favorites from a speaker.
- */
 async function getFavorites(roomName) {
   const device = getDevice(roomName);
-  const response = await device.ContentDirectoryService.Browse({
-    ObjectID: 'FV:2',
-    BrowseFlag: 'BrowseDirectChildren',
-    Filter: '*',
-    StartingIndex: 0,
-    RequestedCount: 100,
-    SortCriteria: ''
-  });
-
-  if (!response || !response.Result) {
+  
+  if (device.isOffline && device.offlineUntil && Date.now() < device.offlineUntil) {
+    console.log(`[Sonos Debug] Skipping getFavorites for offline room "${roomName}" (backoff active)`);
     return [];
   }
 
-  const xml = unescapeXmlOnce(response.Result);
-  const itemRegex = /<item\s+[^>]*>([\s\S]*?)<\/item>/g;
-  let match;
+  try {
+    const response = await device.ContentDirectoryService.Browse({
+      ObjectID: 'FV:2',
+      BrowseFlag: 'BrowseDirectChildren',
+      Filter: '*',
+      StartingIndex: 0,
+      RequestedCount: 100,
+      SortCriteria: ''
+    });
 
-  const parsedFavorites = [];
-
-  while ((match = itemRegex.exec(xml)) !== null) {
-    const content = match[1];
-    
-    // Extract dc:title
-    const titleMatch = content.match(/<dc:title\b[^>]*>([\s\S]*?)<\/dc:title>/);
-    const title = titleMatch ? unescapeXmlOnce(titleMatch[1]) : '';
-    
-    // Extract res (URI)
-    const resMatch = content.match(/<res[^>]*>([\s\S]*?)<\/res>/);
-    const uri = resMatch ? unescapeXmlOnce(resMatch[1]) : '';
-
-    // Extract upnp:class
-    const classMatch = content.match(/<upnp:class\b[^>]*>([^<]+)<\/upnp:class>/);
-    const upnpClass = classMatch ? classMatch[1] : '';
-
-    // Extract r:resMD (Metadata)
-    const mdMatch = content.match(/<r:resMD\b[^>]*>([\s\S]*?)<\/r:resMD>/);
-    let trackObj = null;
-    if (mdMatch) {
-      const rawMetadata = unescapeXml(mdMatch[1]);
-      
-      const idMatch = rawMetadata.match(/<item id="([^"]+)"/);
-      const parentIdMatch = rawMetadata.match(/parentID="([^"]+)"/);
-      const subClassMatch = rawMetadata.match(/<upnp:class\b[^>]*>([^<]+)<\/upnp:class>/);
-      const cdudnMatch = rawMetadata.match(/<desc id="cdudn"[^>]*>([^<]+)<\/desc>/);
-      const artMatch = rawMetadata.match(/<upnp:albumArtURI\b[^>]*>([^<]+)<\/upnp:albumArtURI>/);
-
-      trackObj = {
-        ItemId: idMatch ? idMatch[1] : undefined,
-        ParentId: parentIdMatch ? parentIdMatch[1] : undefined,
-        UpnpClass: subClassMatch ? subClassMatch[1] : undefined,
-        CdUdn: cdudnMatch ? cdudnMatch[1] : undefined,
-        AlbumArtUri: artMatch ? artMatch[1] : undefined,
-        Title: title
-      };
+    if (!response || !response.Result) {
+      return [];
     }
 
-    parsedFavorites.push({
-      Title: title,
-      Uri: uri,
-      UpnpClass: upnpClass,
-      TrackMetadata: trackObj
-    });
-  }
+    const xml = unescapeXmlOnce(response.Result);
+    const itemRegex = /<item\s+[^>]*>([\s\S]*?)<\/item>/g;
+    let match;
 
-  return parsedFavorites;
+    const parsedFavorites = [];
+
+    while ((match = itemRegex.exec(xml)) !== null) {
+      const content = match[1];
+      
+      // Extract dc:title
+      const titleMatch = content.match(/<dc:title\b[^>]*>([\s\S]*?)<\/dc:title>/);
+      const title = titleMatch ? unescapeXmlOnce(titleMatch[1]) : '';
+      
+      // Extract res (URI)
+      const resMatch = content.match(/<res[^>]*>([\s\S]*?)<\/res>/);
+      const uri = resMatch ? unescapeXmlOnce(resMatch[1]) : '';
+
+      // Extract upnp:class
+      const classMatch = content.match(/<upnp:class\b[^>]*>([^<]+)<\/upnp:class>/);
+      const upnpClass = classMatch ? classMatch[1] : '';
+
+      // Extract r:resMD (Metadata)
+      const mdMatch = content.match(/<r:resMD\b[^>]*>([\s\S]*?)<\/r:resMD>/);
+      let trackObj = null;
+      if (mdMatch) {
+        const rawMetadata = unescapeXml(mdMatch[1]);
+        
+        const idMatch = rawMetadata.match(/<item id="([^"]+)"/);
+        const parentIdMatch = rawMetadata.match(/parentID="([^"]+)"/);
+        const subClassMatch = rawMetadata.match(/<upnp:class\b[^>]*>([^<]+)<\/upnp:class>/);
+        const cdudnMatch = rawMetadata.match(/<desc id="cdudn"[^>]*>([^<]+)<\/desc>/);
+        const artMatch = rawMetadata.match(/<upnp:albumArtURI\b[^>]*>([^<]+)<\/upnp:albumArtURI>/);
+
+        trackObj = {
+          ItemId: idMatch ? idMatch[1] : undefined,
+          ParentId: parentIdMatch ? parentIdMatch[1] : undefined,
+          UpnpClass: subClassMatch ? subClassMatch[1] : undefined,
+          CdUdn: cdudnMatch ? cdudnMatch[1] : undefined,
+          AlbumArtUri: artMatch ? artMatch[ artMatch.length - 1 ] : undefined, // safer art extraction
+          Title: title
+        };
+      }
+
+      parsedFavorites.push({
+        Title: title,
+        Uri: uri,
+        UpnpClass: upnpClass,
+        TrackMetadata: trackObj
+      });
+    }
+
+    markDeviceOnline(device);
+    return parsedFavorites;
+  } catch (err) {
+    const isNetworkError = err.code === 'ECONNREFUSED' || 
+                           err.code === 'EHOSTUNREACH' || 
+                           err.code === 'ETIMEDOUT' || 
+                           err.name === 'FetchError' || 
+                           err.message.includes('timeout') ||
+                           err.message.includes('fetch');
+    if (isNetworkError) {
+      markDeviceOffline(device, err);
+    }
+    throw err;
+  }
 }
 
 /**
@@ -907,9 +944,240 @@ function getRoomStates() {
       playMode: state.playMode || 'NORMAL',
       diagnostics: d.diagnostics || null,
       batteryLevel: state.batteryLevel !== undefined ? state.batteryLevel : null,
-      isCharging: !!state.isCharging
+      isCharging: !!state.isCharging,
+      isOffline: !!state.isOffline
     };
   });
+}
+
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Plays a TuneIn radio station in the given room.
+ */
+async function playTuneIn(roomName, stationId) {
+  console.log(`[Sonos Debug] playTuneIn called for room "${roomName}", stationId: "${stationId}"`);
+  try {
+    const device = getDevice(roomName);
+    const encodedTuneInUri = encodeURIComponent(stationId);
+    const uri = `x-sonosapi-stream:s${encodedTuneInUri}?sid=254&flags=8224&sn=0`;
+    const metadata = `<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="F00092020s${encodedTuneInUri}" parentID="L" restricted="true"><dc:title>tunein</dc:title><upnp:class>object.item.audioItem.audioBroadcast</upnp:class><desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON254_</desc></item></DIDL-Lite>`;
+    
+    await device.AVTransportService.SetAVTransportURI({
+      InstanceID: 0,
+      CurrentURI: uri,
+      CurrentURIMetaData: metadata
+    });
+    await device.Play();
+    
+    const norm = normalizeRoomName(device.Name);
+    if (deviceStates[norm]) deviceStates[norm].isPlaying = true;
+    sendPlayStatus(device.Name, true);
+    
+    return stationId;
+  } catch (err) {
+    console.error(`[Sonos Debug] Error during playTuneIn for room "${roomName}":`, formatError(err));
+    throw err;
+  }
+}
+
+/**
+ * Ungroups the given room (makes it a standalone coordinator).
+ */
+async function leaveGroup(roomName) {
+  console.log(`[Sonos Debug] leaveGroup called for room "${roomName}"`);
+  try {
+    const device = getDevice(roomName);
+    await device.AVTransportService.BecomeCoordinatorOfStandaloneGroup({ InstanceID: 0 });
+    console.log(`[Sonos Debug] Room "${roomName}" is now a coordinator of a standalone group.`);
+    return true;
+  } catch (err) {
+    console.error(`[Sonos Debug] Error during leaveGroup for room "${roomName}":`, formatError(err));
+    throw err;
+  }
+}
+
+/**
+ * Plays a local audio clip file.
+ */
+async function playClip(roomName, filename, volumeVal) {
+  console.log(`[Sonos Debug] playClip called for room "${roomName}", filename: "${filename}", volumeVal: "${volumeVal}"`);
+  try {
+    const device = getDevice(roomName);
+    const settings = getSettings();
+    const port = settings.port || 8888;
+    const ip = settings.bridgeIp || getLocalIp();
+    const clipUrl = `http://${ip}:${port}/clips/${filename}`;
+    
+    const vol = volumeVal ? parseInt(volumeVal, 10) : undefined;
+    await device.PlayNotification({
+      trackUri: clipUrl,
+      volume: vol,
+      timeout: 15,
+      onlyWhenPlaying: false
+    });
+    return clipUrl;
+  } catch (err) {
+    console.error(`[Sonos Debug] Error during playClip for room "${roomName}":`, formatError(err));
+    throw err;
+  }
+}
+
+/**
+ * Broadcasts a TTS announcement to all speakers.
+ */
+async function sayAll(text, volumeVal) {
+  console.log(`[Sonos Debug] sayAll called, text: "${text}", volumeVal: "${volumeVal}"`);
+  const promises = devices.map(async (device) => {
+    try {
+      await sayRoom(device.Name, text, volumeVal);
+    } catch (err) {
+      console.error(`[Sonos Debug] sayAll failed for room "${device.Name}":`, err.message);
+    }
+  });
+  await Promise.all(promises);
+}
+
+/**
+ * Plays an audio clip on all speakers.
+ */
+async function clipAll(filename, volumeVal) {
+  console.log(`[Sonos Debug] clipAll called, filename: "${filename}", volumeVal: "${volumeVal}"`);
+  const promises = devices.map(async (device) => {
+    try {
+      await playClip(device.Name, filename, volumeVal);
+    } catch (err) {
+      console.error(`[Sonos Debug] clipAll failed for room "${device.Name}":`, err.message);
+    }
+  });
+  await Promise.all(promises);
+}
+
+/**
+ * Applies a preset to group and configure speakers.
+ */
+async function applyPreset(presetInput) {
+  let preset = presetInput;
+  if (typeof presetInput === 'string') {
+    const presetPath = path.join(__dirname, '../presets', `${presetInput}.json`);
+    if (!fs.existsSync(presetPath)) {
+      throw new Error(`Preset "${presetInput}" not found`);
+    }
+    preset = JSON.parse(fs.readFileSync(presetPath, 'utf8'));
+  }
+
+  console.log(`[Sonos Debug] Applying preset:`, JSON.stringify(preset));
+
+  if (!preset.players || !Array.isArray(preset.players) || preset.players.length === 0) {
+    throw new Error('Preset has no players defined');
+  }
+
+  const coordinatorConfig = preset.players[0];
+  const coordinatorDevice = getDevice(coordinatorConfig.roomName);
+  
+  // 1. Make coordinator standalone first to act as group leader
+  try {
+    await coordinatorDevice.AVTransportService.BecomeCoordinatorOfStandaloneGroup({ InstanceID: 0 });
+  } catch (err) {
+    // Ignore if already standalone
+  }
+
+  // 2. Joining member players to coordinator
+  for (let i = 1; i < preset.players.length; i++) {
+    const config = preset.players[i];
+    try {
+      const memberDevice = getDevice(config.roomName);
+      console.log(`[Sonos Debug] Joining "${memberDevice.Name}" to coordinator "${coordinatorDevice.Name}"...`);
+      await memberDevice.JoinGroup(coordinatorDevice.Name);
+    } catch (err) {
+      console.error(`[Sonos Debug] Failed to join room "${config.roomName}" to group:`, err.message);
+    }
+  }
+
+  // Brief pause for UPnP state stabilization
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // 3. Set individual player volumes
+  for (const config of preset.players) {
+    try {
+      const dev = getDevice(config.roomName);
+      console.log(`[Sonos Debug] Setting volume of "${dev.Name}" to ${config.volume}`);
+      await dev.SetVolume(config.volume);
+      
+      const norm = normalizeRoomName(dev.Name);
+      if (deviceStates[norm]) deviceStates[norm].volume = config.volume;
+      sendVolumeStatus(dev.Name, config.volume);
+    } catch (err) {
+      console.error(`[Sonos Debug] Failed to set volume for "${config.roomName}":`, err.message);
+    }
+  }
+
+  // 4. Play favorite/URI stream on coordinator
+  if (preset.favorite) {
+    console.log(`[Sonos Debug] Playing favorite "${preset.favorite}" on coordinator "${coordinatorDevice.Name}"`);
+    await playFavorite(coordinatorDevice.Name, preset.favorite);
+  } else if (preset.uri) {
+    console.log(`[Sonos Debug] Playing URI "${preset.uri}" on coordinator "${coordinatorDevice.Name}"`);
+    await coordinatorDevice.AVTransportService.SetAVTransportURI({
+      InstanceID: 0,
+      CurrentURI: preset.uri,
+      CurrentURIMetaData: preset.metadata || ''
+    });
+    await coordinatorDevice.Play();
+  }
+
+  // 5. Config PlayMode on coordinator
+  if (preset.playMode) {
+    let pm = 'NORMAL';
+    if (preset.playMode.shuffle) {
+      pm = preset.playMode.repeat === 'one' ? 'SHUFFLE_NOREPEAT' : 'SHUFFLE';
+    } else if (preset.playMode.repeat) {
+      pm = preset.playMode.repeat === 'one' ? 'REPEAT_ONE' : 'REPEAT_ALL';
+    }
+    console.log(`[Sonos Debug] Setting playMode to "${pm}" on coordinator "${coordinatorDevice.Name}"`);
+    await setRoomPlayMode(coordinatorDevice.Name, pm);
+  }
+
+  // 6. Pause non-preset rooms if pauseOthers is true
+  if (preset.pauseOthers) {
+    const presetRooms = preset.players.map(p => normalizeRoomName(p.roomName));
+    const promises = devices.map(async (d) => {
+      const norm = normalizeRoomName(d.Name);
+      if (!presetRooms.includes(norm)) {
+        try {
+          console.log(`[Sonos Debug] pauseOthers: Pausing "${d.Name}"`);
+          await d.Pause();
+          if (deviceStates[norm]) deviceStates[norm].isPlaying = false;
+          sendPlayStatus(d.Name, false);
+        } catch (err) {
+          // Ignore
+        }
+      }
+    });
+    await Promise.all(promises);
+  }
+
+  // 7. Config sleep timer timeout
+  if (preset.sleep) {
+    const sleepMinutes = parseInt(preset.sleep, 10);
+    if (!isNaN(sleepMinutes) && sleepMinutes > 0) {
+      console.log(`[Sonos Debug] Setting preset sleep timer: Pausing "${coordinatorDevice.Name}" in ${sleepMinutes} minutes`);
+      setTimeout(async () => {
+        try {
+          console.log(`[Sonos Debug] Sleep timer triggered: Pausing coordinator "${coordinatorDevice.Name}"`);
+          await coordinatorDevice.Pause();
+          const norm = normalizeRoomName(coordinatorDevice.Name);
+          if (deviceStates[norm]) deviceStates[norm].isPlaying = false;
+          sendPlayStatus(coordinatorDevice.Name, false);
+        } catch (err) {
+          console.error(`[Sonos Debug] Sleep timer pause failed:`, err.message);
+        }
+      }, sleepMinutes * 60 * 1000);
+    }
+  }
+
+  return true;
 }
 
 module.exports = {
@@ -932,6 +1200,14 @@ module.exports = {
   parseTrackInfo,
   fetchBatteryStatus,
   parseBatteryXml,
-  updateDeviceBatteryStatus
+  updateDeviceBatteryStatus,
+  playTuneIn,
+  leaveGroup,
+  playClip,
+  sayAll,
+  clipAll,
+  applyPreset,
+  updateDeviceState,
+  deviceStates
 };
 

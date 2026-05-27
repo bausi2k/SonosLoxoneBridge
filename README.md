@@ -120,7 +120,25 @@ Spielt einen in der Sonos-App hinterlegten Favoriten (Radio-Sender, Playlist etc
 - **Pfad**: `/:raum/say/:text/:volume?`
 - **Beispiel (mit Lautstärke 40 %)**: `http://192.168.1.100:8888/wohnzimmer/say/Die Waschmaschine ist fertig/40`
 
-### 6. Zusätzliche API-Endpunkte (für UI & Integration)
+### 6. Weitere Steuerungsbefehle
+- **TuneIn-Sender abspielen**:
+  - **Methode**: `GET`
+  - **Pfad**: `/:raum/tunein/play/:stationId`
+  - **Beispiel**: `http://192.168.1.100:8888/kueche/tunein/play/68225` (spielt den TuneIn-Sender mit ID 68225).
+- **Gruppe verlassen (Standalone)**:
+  - **Methode**: `GET`
+  - **Pfad**: `/:raum/leave`
+  - **Beispiel**: `http://192.168.1.100:8888/kueche/leave` (trennt den Lautsprecher aus einer bestehenden Gruppe).
+- **Sound-Clip abspielen**:
+  - **Methode**: `GET`
+  - **Pfad**: `/:raum/clip/:file/:volume?`
+  - **Beispiel**: `http://192.168.1.100:8888/wohnzimmer/clip/bell.mp3/50` (spielt die Audiodatei `bell.mp3` aus `static/clips` mit 50 % Lautstärke ab).
+- **Preset (Raumgruppe / Szene) aktivieren**:
+  - **Methode**: `GET`
+  - **Pfad**: `/preset/:name`
+  - **Beispiel**: `http://192.168.1.100:8888/preset/all` (aktiviert die vordefinierte Szene `"all"` aus dem `presets`-Ordner).
+
+### 7. Zusätzliche API-Endpunkte (für UI & Integration)
 
 Neben den einfachen HTTP-GET-Abkürzungen für Loxone bietet die Brücke eine strukturierte REST-API:
 
