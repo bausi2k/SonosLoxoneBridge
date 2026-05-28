@@ -2,6 +2,12 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.4.6] - 2026-05-28
+- **Kompaktes Log-Layout (Single-Line)**:
+  - Redesign der System-Protokolle im Dashboard: Jeder Log-Eintrag belegt initial genau 1 Zeile (platzsparend & übersichtlich).
+  - Interaktives Togglesystem: Detaillierte JSON-Payloads (z.B. HTTP-Details) lassen sich bei Bedarf per Klick auf die jeweilige Zeile aufklappen.
+  - Deutlich verbesserter Farbkontrast (optimierte Badge- und Textfarben) auf dunklem Hintergrund zur verbesserten Lesbarkeit.
+
 ## [0.4.5] - 2026-05-28
 - **Bugfix für TTS-Berechtigung**:
   - Freigabe der Berechtigungen für das temporäre TTS-Verzeichnis (`/app/public/temp/tts` auf `chmod 777`) im Dockerfile, um Schreibfehler (`EACCES`) beim Generieren von Sprachansagen unter benutzerdefinierten Host-UserIDs (wie UID 1036) zu vermeiden.
