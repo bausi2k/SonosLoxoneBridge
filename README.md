@@ -52,15 +52,23 @@ version: '3.8'
 
 services:
   sonosloxonebridge:
-    image: sonosloxonebridge:latest
     build: .
+    image: ghcr.io/bausi2k/sonosloxonebridge:latest
     container_name: sonosloxonebridge
     restart: unless-stopped
+    # Verwende den Host-Netzwerkmodus zur Sonos SSDP Auto-Discovery
     network_mode: host
     volumes:
+      # Speicherort für Einstellungen (Port, IPs, Aliases)
       - ./config:/app/config
+      # Speicherort für im Web-UI erstellte Gruppen-Presets
+      - ./presets:/app/presets
+      # Lokaler Ordner für eigene MP3-Audio-Clips (z. B. Türklingel, Alarmsound)
+      - ./clips:/app/public/clips
     environment:
       - NODE_ENV=production
+      # Port für den internen Sonos-UPnP-Event-Listener
+      - SONOS_LISTENER_PORT=6330
 ```
 
 Starten Sie den Container:
