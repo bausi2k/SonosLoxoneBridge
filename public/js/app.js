@@ -1190,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loxonePort,
       ttsLanguage,
       staticSpeakerIps,
-      roomAliases,
+      roomAliases: currentAliases,
       enableDatabaseLogs
     };
 
