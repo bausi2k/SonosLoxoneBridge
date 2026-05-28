@@ -3,7 +3,7 @@ version: '3.8'
 services:
   sonosloxonebridge:
     build: .
-    image: sonosloxonebridge:latest
+    image: ghcr.io/bausi2k/sonosloxonebridge:latest
     container_name: sonosloxonebridge
     restart: unless-stopped
     # Use host networking mode to allow UPnP/SSDP Sonos auto-discovery on the LAN
