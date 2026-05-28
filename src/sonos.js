@@ -8,6 +8,7 @@ const { generateTts } = require('./tts');
 let devices = [];
 let manager = null;
 let pollInterval = null;
+const presetSleepTimers = new Map();
 
 // Track previous states to avoid redundant UDP packets
 const deviceStates = {};
@@ -445,6 +446,10 @@ function stopPolling() {
     clearInterval(pollInterval);
     pollInterval = null;
   }
+  for (const timeoutId of presetSleepTimers.values()) {
+    clearTimeout(timeoutId);
+  }
+  presetSleepTimers.clear();
 }
 
 /**
@@ -1163,7 +1168,15 @@ async function applyPreset(presetInput) {
     const sleepMinutes = parseInt(preset.sleep, 10);
     if (!isNaN(sleepMinutes) && sleepMinutes > 0) {
       console.log(`[Sonos Debug] Setting preset sleep timer: Pausing "${coordinatorDevice.Name}" in ${sleepMinutes} minutes`);
-      setTimeout(async () => {
+      
+      const coordNameNorm = normalizeRoomName(coordinatorDevice.Name);
+      if (presetSleepTimers.has(coordNameNorm)) {
+        clearTimeout(presetSleepTimers.get(coordNameNorm));
+        presetSleepTimers.delete(coordNameNorm);
+      }
+      
+      const timeoutId = setTimeout(async () => {
+        presetSleepTimers.delete(coordNameNorm);
         try {
           console.log(`[Sonos Debug] Sleep timer triggered: Pausing coordinator "${coordinatorDevice.Name}"`);
           await coordinatorDevice.Pause();
@@ -1174,6 +1187,8 @@ async function applyPreset(presetInput) {
           console.error(`[Sonos Debug] Sleep timer pause failed:`, err.message);
         }
       }, sleepMinutes * 60 * 1000);
+      
+      presetSleepTimers.set(coordNameNorm, timeoutId);
     }
   }
 

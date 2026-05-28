@@ -1,0 +1,12 @@
+{
+  "players": [
+    { "roomName": "Lounge", "volume": 15},
+    {"roomName": "Bad", "volume": 15}
+  ],
+  "favorite": "bak",
+    "playMode": {
+    "shuffle": false
+  },
+  "pauseOthers": false,
+  "sleep": 15
+}

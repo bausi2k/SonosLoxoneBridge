@@ -40,6 +40,9 @@
       <button class="tab-btn active" data-tab="speakers">
         <span class="btn-icon"><span class="material-symbols-outlined">speaker</span></span> Lautsprecher
       </button>
+      <button class="tab-btn" data-tab="presets">
+        <span class="btn-icon"><span class="material-symbols-outlined">group_work</span></span> Presets
+      </button>
       <button class="tab-btn" data-tab="settings">
         <span class="btn-icon"><span class="material-symbols-outlined">settings</span></span> Einstellungen
       </button>
@@ -64,6 +67,85 @@
           <div class="loading-state">
             <div class="spinner"></div>
             <p>Suche nach Sonos-Lautsprechern im Netzwerk...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab: Presets -->
+      <section id="tab-presets" class="tab-content hidden">
+        <div class="settings-grid">
+          <!-- Presets List Card -->
+          <div class="glass-card">
+            <h3>Gespeicherte Presets</h3>
+            <p class="console-intro">Aktiviere eine vordefinierte Gruppenkonfiguration oder lösche unbenötigte Einträge.</p>
+            <div id="presets-list" class="presets-list-container">
+              <!-- Dynamically rendered presets list -->
+              <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Lade Presets...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preset Creator Card -->
+          <div class="glass-card">
+            <h3>Preset erstellen</h3>
+            <form id="preset-form">
+              <div class="form-group">
+                <label for="preset-name">Preset Name</label>
+                <input type="text" id="preset-name" required placeholder="z. B. Party, Aufstehen, bak" maxlength="30">
+              </div>
+
+              <div class="form-row-group">
+                <div class="form-group flex-1">
+                  <label for="preset-coordinator">Gruppen-Koordinator (Hauptgerät)</label>
+                  <select id="preset-coordinator" required>
+                    <option value="">-- Wähle einen Lautsprecher --</option>
+                  </select>
+                </div>
+                <div class="form-group" style="width: 120px;">
+                  <label for="preset-coordinator-volume">Lautstärke (%)</label>
+                  <input type="number" id="preset-coordinator-volume" min="0" max="100" value="20" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Gruppenmitglieder & Lautstärken</label>
+                <div id="preset-members-list" class="preset-members-checkboxes">
+                  <!-- Dynamically rendered checkboxes and volume sliders -->
+                  <p class="help-text" style="margin: 0;">Bitte wähle zuerst einen Koordinator aus.</p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="preset-favorite">Sonos Favorit abspielen (Optional)</label>
+                <select id="preset-favorite">
+                  <option value="">-- Keinen (Wiedergabe fortsetzen) --</option>
+                </select>
+              </div>
+
+              <div class="form-row-group">
+                <div class="form-group flex-1">
+                  <label for="preset-sleep">Sleep-Timer (Minuten)</label>
+                  <input type="number" id="preset-sleep" min="0" placeholder="Aus (z. B. 15)">
+                </div>
+                <div class="form-group flex-1" style="justify-content: flex-end; display: flex; flex-direction: row; gap: 0.5rem; align-items: center; padding-top: 1.5rem;">
+                  <input type="checkbox" id="preset-shuffle" style="width: auto;">
+                  <label for="preset-shuffle" style="margin: 0; cursor: pointer;">Zufallswiedergabe</label>
+                </div>
+              </div>
+
+              <div class="form-group" style="display: flex; flex-direction: row; gap: 0.5rem; align-items: center;">
+                <input type="checkbox" id="preset-pause-others" style="width: auto;">
+                <label for="preset-pause-others" style="margin: 0; cursor: pointer;">Andere Räume pausieren</label>
+              </div>
+
+              <div class="settings-actions">
+                <button type="submit" class="btn btn-primary btn-full">
+                  <span class="btn-icon"><span class="material-symbols-outlined">save</span></span> Preset speichern
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </section>
@@ -108,8 +190,35 @@
               </div>
 
               <div class="form-group">
-                <label for="settings-aliases">Raum-Aliases (Optional)</label>
-                <textarea id="settings-aliases" name="roomAliases" rows="3" placeholder='JSON Format, z.B.&#10;{&#10;  "wohnzimmer": "Living Room"&#10;}'></textarea>
+                <label class="label-with-tooltip">
+                  Raum-Aliases (Optional)
+                  <span class="tooltip-wrapper">
+                    <span class="material-symbols-outlined tooltip-icon">info</span>
+                    <span class="tooltip-text">
+                      Ermöglicht das Mapping von Loxone-Raumbezeichnungen auf Sonos-Namen.<br><br>
+                      <strong>Beispiel:</strong> Wenn dein Sonos-Lautsprecher in der Sonos-App "Living Room" heißt, du ihn in Loxone aber mit "wohnzimmer" ansteuern möchtest, wähle links "Living Room" und trage rechts "wohnzimmer" als Alias ein.
+                    </span>
+                  </span>
+                </label>
+                <div class="alias-manager">
+                  <div class="alias-input-row">
+                    <div class="select-wrapper">
+                      <select id="alias-speaker-select">
+                        <option value="">-- Lautsprecher wählen --</option>
+                      </select>
+                    </div>
+                    <div class="input-with-validation">
+                      <input type="text" id="alias-name-input" placeholder="z.B. wohnzimmer" autocomplete="off">
+                      <span class="validation-error-msg" id="alias-validation-msg">Nur Buchstaben, Zahlen und Unterstriche</span>
+                    </div>
+                    <button type="button" id="btn-add-alias" class="btn btn-secondary btn-icon-only" title="Alias hinzufügen">
+                      <span class="material-symbols-outlined">add</span>
+                    </button>
+                  </div>
+                  <div id="alias-list" class="alias-list">
+                    <!-- Dynamic alias items -->
+                  </div>
+                </div>
                 <small class="help-text">Verknüpft Loxone-Bezeichnungen mit echten Sonos-Raumnamen.</small>
               </div>
 
@@ -216,6 +325,50 @@
                 <strong>Beispiel (mit Lautstärke 40%):</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/say/Die%20Waschmaschine%20ist%20fertig/40</code>
               </div>
             </div>
+
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">/:raum/tunein/play/:stationId</span>
+              </div>
+              <p class="endpoint-desc">Spielt einen TuneIn-Radiosender über seine Stations-ID ab.</p>
+              <div class="endpoint-example">
+                <strong>Beispiel:</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/kueche/tunein/play/68225</code>
+              </div>
+            </div>
+
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">/:raum/leave</span>
+              </div>
+              <p class="endpoint-desc">Trennt einen Lautsprecher aus einer bestehenden Gruppe, so dass er wieder eigenständig betrieben wird.</p>
+              <div class="endpoint-example">
+                <strong>Beispiel:</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/kueche/leave</code>
+              </div>
+            </div>
+
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">/:raum/clip/:file/:volume?</span>
+              </div>
+              <p class="endpoint-desc">Spielt eine Sounddatei (z. B. <code>bell.mp3</code>) aus dem Ordner <code>static/clips</code> ab. Die Lautstärke ist optional.</p>
+              <div class="endpoint-example">
+                <strong>Beispiel:</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/clip/bell.mp3/50</code>
+              </div>
+            </div>
+
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">/preset/:name</span>
+              </div>
+              <p class="endpoint-desc">Aktiviert eine vordefinierte Raumgruppe (Preset) aus dem Verzeichnis <code>presets</code> (z. B. Raumkombinationen, Lautstärken, Modi).</p>
+              <div class="endpoint-example">
+                <strong>Beispiel:</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/preset/all</code>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -223,7 +376,7 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>SonosLoxoneBridge v0.2.0 &bull; Lokale Steuerung ohne Cloud &bull; Erstellt mit ❤️</p>
+      <p>SonosLoxoneBridge v0.3.0 &bull; Lokale Steuerung ohne Cloud &bull; Erstellt mit ❤️</p>
     </footer>
   </div>
 

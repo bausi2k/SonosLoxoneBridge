@@ -194,6 +194,11 @@ document.addEventListener('DOMContentLoaded', () => {
         logPollInterval = null;
       }
     }
+
+    if (tabId === 'presets') {
+      fetchPresets();
+      populatePresetCreator();
+    }
   }
 
   // Bind click handlers to tab buttons
@@ -211,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // App State
   let currentRooms = [];
+  let currentAliases = {};
   let roomFavorites = {}; // Cached favorites: { roomName: [favorites] }
   const showIpRooms = {}; // Track which speaker IPs are displayed
   let activeTtsRoom = '';
@@ -266,6 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         renderSpeakers();
+        updateAliasSpeakerDropdown();
         
         // Fetch favorites for any newly discovered rooms
         currentRooms.forEach(room => {
@@ -291,8 +298,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const staticIps = settings.staticSpeakerIps || [];
     document.getElementById('settings-static-ips').value = staticIps.join('\n');
 
-    const aliases = settings.roomAliases || {};
-    document.getElementById('settings-aliases').value = JSON.stringify(aliases, null, 2);
+    currentAliases = settings.roomAliases || {};
+    renderAliasList();
+  }
+
+  // Update dropdown with available speakers
+  function updateAliasSpeakerDropdown() {
+    const select = document.getElementById('alias-speaker-select');
+    if (!select) return;
+
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">-- Lautsprecher wählen --</option>';
+
+    currentRooms.forEach(room => {
+      const opt = document.createElement('option');
+      opt.value = room.name;
+      opt.textContent = room.name;
+      select.appendChild(opt);
+    });
+
+    if (currentValue && currentRooms.some(r => r.name === currentValue)) {
+      select.value = currentValue;
+    }
+  }
+
+  // Render alias list items
+  function renderAliasList() {
+    const listContainer = document.getElementById('alias-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '';
+
+    const keys = Object.keys(currentAliases);
+    if (keys.length === 0) {
+      listContainer.innerHTML = '<div class="alias-item-speaker" style="padding: 0.5rem; text-align: center;">Keine Aliases eingerichtet</div>';
+      return;
+    }
+
+    keys.forEach(alias => {
+      const speaker = currentAliases[alias];
+      const item = document.createElement('div');
+      item.className = 'alias-item';
+
+      item.innerHTML = `
+        <div class="alias-item-text">
+          <strong>${alias}</strong>
+          <span class="alias-item-arrow">&rarr;</span>
+          <span class="alias-item-speaker">${speaker}</span>
+        </div>
+        <button type="button" class="btn-delete-alias" data-alias="${alias}" title="Alias löschen">
+          <span class="material-symbols-outlined" style="font-size: 1.1rem;">delete</span>
+        </button>
+      `;
+
+      listContainer.appendChild(item);
+    });
   }
 
   // Fetch favorites for a specific Sonos room
@@ -1039,18 +1099,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .map(ip => ip.trim())
       .filter(ip => ip.length > 0);
 
-    // Validate and parse room aliases (JSON)
-    const aliasesText = (formData.get('roomAliases') || '').trim();
-    let roomAliases = {};
-
-    if (aliasesText) {
-      try {
-        roomAliases = JSON.parse(aliasesText);
-      } catch (err) {
-        showToast('Ungültiges Format für Raum-Aliases. Muss ein gültiges JSON-Objekt sein.', 'error');
-        return;
-      }
-    }
+    const roomAliases = currentAliases;
 
     const payload = {
       port,
@@ -1136,7 +1185,387 @@ document.addEventListener('DOMContentLoaded', () => {
     return str.toLowerCase().replace(/[^a-z0-9]/g, '');
   }
 
+  // ==========================================================================
+  // Presets Logic & UI Renderer
+  // ==========================================================================
+
+  const presetsListContainer = document.getElementById('presets-list');
+  const presetForm = document.getElementById('preset-form');
+  const presetCoordinatorSelect = document.getElementById('preset-coordinator');
+  const presetCoordinatorVolumeInput = document.getElementById('preset-coordinator-volume');
+  const presetMembersListContainer = document.getElementById('preset-members-list');
+  const presetFavoriteSelect = document.getElementById('preset-favorite');
+
+  // Fetch all saved presets and render
+  async function fetchPresets() {
+    if (!presetsListContainer) return;
+    try {
+      const response = await fetch('/api/presets');
+      const data = await response.json();
+      if (data.success && data.presets) {
+        renderPresets(data.presets);
+      } else {
+        presetsListContainer.innerHTML = `<p class="help-text">Fehler beim Laden der Presets: ${data.error || 'Unbekannt'}</p>`;
+      }
+    } catch (err) {
+      presetsListContainer.innerHTML = '<p class="help-text">Netzwerkfehler beim Laden der Presets.</p>';
+      console.error('[Bridge Presets Error] Failed to fetch presets:', err);
+    }
+  }
+
+  // Render presets list in HTML
+  function renderPresets(presets) {
+    if (!presetsListContainer) return;
+    if (presets.length === 0) {
+      presetsListContainer.innerHTML = '<p class="help-text" style="text-align: center; padding: 2rem 0;">Keine Presets erstellt. Erstelle dein erstes Preset rechts!</p>';
+      return;
+    }
+
+    let html = '';
+    presets.forEach(p => {
+      const config = p.config;
+      const coordinator = config.players[0] ? `${config.players[0].roomName} (${config.players[0].volume}%)` : '-';
+      const members = config.players.slice(1).map(m => `${m.roomName} (${m.volume}%)`).join(', ') || 'Keine';
+      const favoriteInfo = config.favorite ? `<br><strong>Favorit:</strong> ${escapeHtml(config.favorite)}` : '';
+      const sleepInfo = config.sleep ? `<br><strong>Sleep-Timer:</strong> ${config.sleep} Min` : '';
+      const shuffleInfo = (config.playMode && config.playMode.shuffle) ? ' (Zufallswiedergabe)' : '';
+
+      html += `
+        <div class="preset-card-item" data-preset="${escapeHtml(p.name)}">
+          <div class="preset-info">
+            <span class="preset-info-name">${escapeHtml(p.name)}</span>
+            <span class="preset-info-details">
+              <strong>Koordinator:</strong> ${escapeHtml(coordinator)}${shuffleInfo}<br>
+              <strong>Mitglieder:</strong> ${escapeHtml(members)}
+              ${favoriteInfo}
+              ${sleepInfo}
+            </span>
+          </div>
+          <div class="preset-card-actions">
+            <button class="btn btn-secondary btn-apply-preset" data-preset="${escapeHtml(p.name)}" title="Preset anwenden">
+              <span class="material-symbols-outlined">play_arrow</span>
+            </button>
+            <button class="btn btn-secondary btn-danger btn-delete-preset" data-preset="${escapeHtml(p.name)}" title="Preset löschen">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    presetsListContainer.innerHTML = html;
+
+    // Bind action events
+    presetsListContainer.querySelectorAll('.btn-apply-preset').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const name = btn.dataset.preset;
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width: 14px; height: 14px; margin: 0;"></div>';
+        try {
+          const res = await fetch(`/preset/${name}`);
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Preset "${name}" erfolgreich angewendet!`);
+            // Trigger quick refresh
+            setTimeout(fetchStatus, 1500);
+          } else {
+            showToast(`Fehler beim Anwenden: ${data.error || 'Unbekannt'}`, 'error');
+          }
+        } catch (e) {
+          showToast('Netzwerkfehler beim Anwenden', 'error');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = originalContent;
+        }
+      });
+    });
+
+    presetsListContainer.querySelectorAll('.btn-delete-preset').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const name = btn.dataset.preset;
+        if (!confirm(`Möchten Sie das Preset "${name}" wirklich löschen?`)) return;
+        try {
+          const res = await fetch(`/api/presets/${name}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Preset "${name}" gelöscht`);
+            fetchPresets();
+          } else {
+            showToast(`Fehler beim Löschen: ${data.error || 'Unbekannt'}`, 'error');
+          }
+        } catch (e) {
+          showToast('Netzwerkfehler beim Löschen', 'error');
+        }
+      });
+    });
+  }
+
+  // Populate creator dropdowns with available rooms
+  async function populatePresetCreator() {
+    if (!presetCoordinatorSelect) return;
+    
+    const currentCoord = presetCoordinatorSelect.value;
+    
+    // 1. Populate Coordinator select
+    let coordHtml = '<option value="">-- Wähle einen Lautsprecher --</option>';
+    currentRooms.forEach(room => {
+      const selected = room.name === currentCoord ? 'selected' : '';
+      coordHtml += `<option value="${escapeHtml(room.name)}" ${selected}>${escapeHtml(room.name)}</option>`;
+    });
+    presetCoordinatorSelect.innerHTML = coordHtml;
+
+    // 2. Populate favorite dropdown if coordinator is selected
+    if (presetCoordinatorSelect.value) {
+      await loadFavoritesForPresetCreator(presetCoordinatorSelect.value);
+    } else {
+      presetFavoriteSelect.innerHTML = '<option value="">-- Keinen (Wiedergabe fortsetzen) --</option>';
+      presetMembersListContainer.innerHTML = '<p class="help-text" style="margin: 0;">Bitte wähle zuerst einen Koordinator aus.</p>';
+    }
+  }
+
+  // Load favorites for selected coordinator
+  async function loadFavoritesForPresetCreator(roomName) {
+    if (!presetFavoriteSelect) return;
+    const currentFav = presetFavoriteSelect.value;
+
+    try {
+      let favs = roomFavorites[roomName];
+      if (!favs) {
+        const res = await fetch(`/api/favorites/${roomName}`);
+        const data = await res.json();
+        if (data.success && data.favorites) {
+          favs = data.favorites.map(f => f.Title);
+          roomFavorites[roomName] = favs;
+        }
+      }
+
+      let favHtml = '<option value="">-- Keinen (Wiedergabe fortsetzen) --</option>';
+      if (favs && favs.length > 0) {
+        favs.forEach(title => {
+          const selected = title === currentFav ? 'selected' : '';
+          favHtml += `<option value="${escapeHtml(title)}" ${selected}>${escapeHtml(title)}</option>`;
+        });
+      }
+      presetFavoriteSelect.innerHTML = favHtml;
+    } catch (err) {
+      presetFavoriteSelect.innerHTML = '<option value="">-- Fehler beim Laden der Favoriten --</option>';
+    }
+  }
+
+  // Update member checkboxes when coordinator select changes
+  function updatePresetMembers() {
+    if (!presetMembersListContainer) return;
+    const coordName = presetCoordinatorSelect.value;
+    if (!coordName) {
+      presetMembersListContainer.innerHTML = '<p class="help-text" style="margin: 0;">Bitte wähle zuerst einen Koordinator aus.</p>';
+      return;
+    }
+
+    let html = '';
+    currentRooms.forEach(room => {
+      if (room.name === coordName) return; // Skip coordinator in member list
+      const norm = normalizeSelector(room.name);
+      html += `
+        <div class="preset-member-item">
+          <label class="preset-member-label" for="member-chk-${norm}">
+            <input type="checkbox" id="member-chk-${norm}" data-room="${escapeHtml(room.name)}" style="width: auto;">
+            <span>${escapeHtml(room.name)}</span>
+          </label>
+          <div class="preset-member-vol-control">
+            <input type="range" class="preset-member-vol-slider" id="member-vol-${norm}" min="0" max="100" value="20" disabled>
+            <span class="preset-member-vol-val" id="member-val-${norm}">20%</span>
+          </div>
+        </div>
+      `;
+    });
+
+    presetMembersListContainer.innerHTML = html;
+
+    // Attach checkbox toggles to enable/disable volume sliders
+    presetMembersListContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const norm = normalizeSelector(chk.dataset.room);
+        const slider = document.getElementById(`member-vol-${norm}`);
+        if (slider) {
+          slider.disabled = !chk.checked;
+        }
+      });
+    });
+
+    // Attach input listeners to volume sliders to update percentage labels
+    presetMembersListContainer.querySelectorAll('.preset-member-vol-slider').forEach(slider => {
+      slider.addEventListener('input', () => {
+        const norm = slider.id.replace('member-vol-', '');
+        const valEl = document.getElementById(`member-val-${norm}`);
+        if (valEl) {
+          valEl.textContent = `${slider.value}%`;
+        }
+      });
+    });
+  }
+
+  // Handle coordinator selection changes
+  if (presetCoordinatorSelect) {
+    presetCoordinatorSelect.addEventListener('change', async () => {
+      const coordName = presetCoordinatorSelect.value;
+      if (coordName) {
+        await loadFavoritesForPresetCreator(coordName);
+      } else {
+        presetFavoriteSelect.innerHTML = '<option value="">-- Keinen (Wiedergabe fortsetzen) --</option>';
+      }
+      updatePresetMembers();
+    });
+  }
+
+  // Save preset on submit
+  if (presetForm) {
+    presetForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById('preset-name').value.trim();
+      const coordName = presetCoordinatorSelect.value;
+      const coordVol = parseInt(presetCoordinatorVolumeInput.value, 10);
+      const favorite = presetFavoriteSelect.value || null;
+      const sleep = parseInt(document.getElementById('preset-sleep').value, 10) || null;
+      const shuffle = document.getElementById('preset-shuffle').checked;
+      const pauseOthers = document.getElementById('preset-pause-others').checked;
+
+      if (!name || !coordName) {
+        showToast('Name und Koordinator werden benötigt', 'error');
+        return;
+      }
+
+      // Collect coordinator player
+      const players = [
+        { roomName: coordName, volume: coordVol }
+      ];
+
+      // Collect member players
+      presetMembersListContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        if (chk.checked) {
+          const room = chk.dataset.room;
+          const norm = normalizeSelector(room);
+          const slider = document.getElementById(`member-vol-${norm}`);
+          const vol = slider ? parseInt(slider.value, 10) : 20;
+          players.push({
+            roomName: room,
+            volume: vol
+          });
+        }
+      });
+
+      const config = {
+        players,
+        favorite,
+        playMode: {
+          shuffle
+        },
+        pauseOthers,
+        sleep
+      };
+
+      try {
+        const response = await fetch('/api/presets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, config })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(`Preset "${data.name}" erfolgreich gespeichert!`);
+          presetForm.reset();
+          presetCoordinatorSelect.value = '';
+          presetFavoriteSelect.innerHTML = '<option value="">-- Keinen (Wiedergabe fortsetzen) --</option>';
+          updatePresetMembers();
+          fetchPresets();
+        } else {
+          showToast(`Speichern fehlgeschlagen: ${data.error || 'Unbekannt'}`, 'error');
+        }
+      } catch (err) {
+        showToast('Netzwerkfehler beim Speichern des Presets', 'error');
+      }
+    });
+  }
+
+  function setupAliasManager() {
+    const speakerSelect = document.getElementById('alias-speaker-select');
+    const nameInput = document.getElementById('alias-name-input');
+    const btnAdd = document.getElementById('btn-add-alias');
+    const validationMsg = document.getElementById('alias-validation-msg');
+    const aliasList = document.getElementById('alias-list');
+    
+    if (!speakerSelect || !nameInput || !btnAdd || !aliasList) return;
+    
+    const aliasRegex = /^[a-zA-Z0-9_]+$/;
+    
+    function validateInput() {
+      const val = nameInput.value.trim();
+      if (val === '') {
+        validationMsg.classList.remove('visible');
+        nameInput.style.borderColor = '';
+        return true;
+      }
+      if (!aliasRegex.test(val)) {
+        validationMsg.classList.add('visible');
+        nameInput.style.borderColor = 'var(--color-red)';
+        return false;
+      } else {
+        validationMsg.classList.remove('visible');
+        nameInput.style.borderColor = '';
+        return true;
+      }
+    }
+    
+    nameInput.addEventListener('input', validateInput);
+    
+    btnAdd.addEventListener('click', (e) => {
+      e.preventDefault();
+      const speaker = speakerSelect.value;
+      const alias = nameInput.value.trim();
+      
+      if (!speaker) {
+        showToast('Bitte wähle einen Lautsprecher aus', 'error');
+        return;
+      }
+      if (!alias) {
+        showToast('Bitte gib einen Alias-Namen ein', 'error');
+        return;
+      }
+      if (!validateInput()) {
+        showToast('Ungültiges Format für Alias-Name', 'error');
+        return;
+      }
+      
+      currentAliases[alias] = speaker;
+      
+      speakerSelect.value = '';
+      nameInput.value = '';
+      validationMsg.classList.remove('visible');
+      nameInput.style.borderColor = '';
+      
+      renderAliasList();
+      showToast(`Alias "${alias}" hinzugefügt`);
+    });
+    
+    aliasList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-delete-alias');
+      if (btn) {
+        e.preventDefault();
+        const alias = btn.dataset.alias;
+        if (alias && currentAliases[alias]) {
+          delete currentAliases[alias];
+          renderAliasList();
+          showToast(`Alias "${alias}" entfernt`);
+        }
+      }
+    });
+  }
+
   // Initialize and start polling
+  setupAliasManager();
   setupEventDelegation();
   fetchStatus(true);
   pollInterval = setInterval(fetchStatus, 3000);

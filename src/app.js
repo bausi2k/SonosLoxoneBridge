@@ -36,6 +36,7 @@ console.warn = function(...args) {
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const http = require('http');
 const { getSettings, saveSettings } = require('./settings');
 const { 
@@ -51,7 +52,13 @@ const {
   formatError,
   nextTrack,
   previousTrack,
-  setRoomPlayMode
+  setRoomPlayMode,
+  playTuneIn,
+  leaveGroup,
+  playClip,
+  sayAll,
+  clipAll,
+  applyPreset
 } = require('./sonos');
 const { generateLoxoneXml } = require('./loxone');
 const { cleanupTts } = require('./tts');
@@ -127,6 +134,93 @@ app.get('/:raum/say/:text/:volume?', async (req, res) => {
     res.json({ success: true, message: `TTS announcement triggered in room "${raum}"`, url });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
+  }
+});
+
+// GET /<raum>/tunein/play/<stationId>
+app.get('/:raum/tunein/play/:stationId', async (req, res) => {
+  const { raum, stationId } = req.params;
+  try {
+    await playTuneIn(raum, stationId);
+    res.json({ success: true, message: `Playing TuneIn station ${stationId} in room "${raum}"` });
+  } catch (err) {
+    res.status(404).json({ success: false, error: err.message });
+  }
+});
+
+// GET /<raum>/leave
+app.get('/:raum/leave', async (req, res) => {
+  const { raum } = req.params;
+  try {
+    await leaveGroup(raum);
+    res.json({ success: true, message: `Room "${raum}" left group` });
+  } catch (err) {
+    res.status(404).json({ success: false, error: err.message });
+  }
+});
+
+// GET /<raum>/playpause
+app.get('/:raum/playpause', async (req, res) => {
+  const { raum } = req.params;
+  try {
+    const states = getRoomStates();
+    const roomState = states.find(r => r.name.toLowerCase() === raum.toLowerCase());
+    if (!roomState) {
+      throw new Error(`Room "${raum}" not found`);
+    }
+    if (roomState.isPlaying) {
+      await pauseRoom(raum);
+      res.json({ success: true, message: `Paused in room "${raum}"` });
+    } else {
+      await playRoom(raum);
+      res.json({ success: true, message: `Started playing in room "${raum}"` });
+    }
+  } catch (err) {
+    res.status(404).json({ success: false, error: err.message });
+  }
+});
+
+// GET /<raum>/clip/<file>/<volume> (volume is optional)
+app.get('/:raum/clip/:file/:volume?', async (req, res) => {
+  const { raum, file, volume } = req.params;
+  try {
+    await playClip(raum, file, volume);
+    res.json({ success: true, message: `Playing audio clip "${file}" in room "${raum}"` });
+  } catch (err) {
+    res.status(404).json({ success: false, error: err.message });
+  }
+});
+
+// GET /sayall/<text>/<volume>
+app.get('/sayall/:text/:volume?', async (req, res) => {
+  const { text, volume } = req.params;
+  try {
+    await sayAll(text, volume);
+    res.json({ success: true, message: `Global TTS announcement triggered: "${text}"` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /clipall/<file>/<volume>
+app.get('/clipall/:file/:volume?', async (req, res) => {
+  const { file, volume } = req.params;
+  try {
+    await clipAll(file, volume);
+    res.json({ success: true, message: `Global audio clip played: "${file}"` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /preset/<name>
+app.get('/preset/:name', async (req, res) => {
+  const { name } = req.params;
+  try {
+    await applyPreset(name);
+    res.json({ success: true, message: `Applied preset "${name}"` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -292,6 +386,76 @@ app.get('/api/loxone-export', (req, res) => {
   res.setHeader('Content-type', 'text/xml');
   res.write(xml);
   res.end();
+});
+
+// GET /api/presets
+app.get('/api/presets', (req, res) => {
+  const presetsDir = path.join(__dirname, '../presets');
+  try {
+    if (!fs.existsSync(presetsDir)) {
+      fs.mkdirSync(presetsDir);
+    }
+    const files = fs.readdirSync(presetsDir);
+    const presetsList = [];
+    files.forEach(file => {
+      if (file.endsWith('.json')) {
+        try {
+          const presetData = JSON.parse(fs.readFileSync(path.join(presetsDir, file), 'utf8'));
+          presetsList.push({
+            name: path.basename(file, '.json'),
+            config: presetData
+          });
+        } catch (e) {
+          // Ignore invalid JSON files
+        }
+      }
+    });
+    res.json({ success: true, presets: presetsList });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/presets
+app.post('/api/presets', (req, res) => {
+  const { name, config } = req.body;
+  if (!name || !config) {
+    return res.status(400).json({ success: false, error: 'Name and config are required' });
+  }
+  
+  // Safe filename check
+  const safeName = name.replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+  const presetsDir = path.join(__dirname, '../presets');
+  const targetPath = path.join(presetsDir, `${safeName}.json`);
+  
+  try {
+    if (!fs.existsSync(presetsDir)) {
+      fs.mkdirSync(presetsDir);
+    }
+    fs.writeFileSync(targetPath, JSON.stringify(config, null, 2), 'utf8');
+    res.json({ success: true, message: `Preset "${safeName}" saved successfully`, name: safeName });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /api/presets/:name
+app.delete('/api/presets/:name', (req, res) => {
+  const { name } = req.params;
+  const safeName = name.replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+  const presetsDir = path.join(__dirname, '../presets');
+  const targetPath = path.join(presetsDir, `${safeName}.json`);
+  
+  try {
+    if (fs.existsSync(targetPath)) {
+      fs.unlinkSync(targetPath);
+      res.json({ success: true, message: `Preset "${safeName}" deleted successfully` });
+    } else {
+      res.status(404).json({ success: false, error: `Preset "${safeName}" not found` });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // POST /api/discover
