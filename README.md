@@ -77,6 +77,26 @@ docker-compose up -d --build
 
 Das Web-UI ist anschließend auf Ihrem Host unter `http://<host-ip>:8888` erreichbar.
 
+> [!IMPORTANT]
+> **Berechtigungen bei Docker-Mounts (z. B. auf Synology NAS)**:
+> Der Container läuft aus Sicherheitsgründen standardmäßig als Nicht-Root-Benutzer (`node`, UID `1000`). Daher kann es beim Speichern von Einstellungen zu Schreibrechte-Fehlern kommen (`EACCES: permission denied`).
+> 
+> **Lösungen**:
+> 1. Passen Sie die Berechtigungen der Verzeichnisse auf dem Host an:
+>    ```bash
+>    chown -R 1000:1000 ./config ./presets ./clips
+>    # oder (z. B. auf Synology via File Station für alle Schreibrechte erteilen):
+>    chmod -R 777 ./config ./presets ./clips
+>    ```
+> 2. Oder weisen Sie Docker Compose an, den Container als `root` auszuführen. Fügen Sie dazu `user: "root"` in der `docker-compose.yml` hinzu:
+>    ```yaml
+>        # ...
+>        container_name: sonosloxonebridge
+>        user: "root"
+>        restart: unless-stopped
+>        # ...
+>    ```
+
 ### 2. Lokaler Betrieb (Entwicklung)
 
 1. Repository klonen und Abhängigkeiten installieren:
