@@ -2,6 +2,13 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.4.1] - 2026-05-28
+- **Persistierung & Docker-Verbesserungen**:
+  - Hinzufügen von Volume-Mappings für `/app/presets` (Gruppen-Presets) und `/app/public/clips` (eigene Audio-Benachrichtigungen) in `docker-compose.yml`, um Datenverlust beim Neuerstellen des Containers zu verhindern.
+  - Entfernung des veralteten `version`-Tags in `docker-compose.yml`.
+  - Aktualisierung der `README.md` zur exakten Übereinstimmung mit der neuen Docker-Compose-Struktur.
+  - Einbindung des "Buy Me A Coffee"-Spendenbuttons in die `README.md` und `CHANGES.md`.
+
 ## [0.4.0] - 2026-05-28
 - **Interaktiver Raum-Alias-Manager**:
   - Ersatz des JSON-Textfeldes in den Einstellungen durch eine benutzerfreundliche UI mit Dropdown-Auswahl der Lautsprecher und Direkt-Eingabe.
