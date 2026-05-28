@@ -2,6 +2,10 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.4.4] - 2026-05-28
+- **Bugfix für leeres SQLite-Protokoll**:
+  - Behebung von leeren Log-Anzeigen im Web-UI bei aktivierter SQLite-Datenbank durch Normalisierung der Groß-/Kleinschreibung bei SQL-Filterabfragen.
+
 ## [0.4.3] - 2026-05-28
 - **UI-Lautstärkensteuerung, SQLite-Logging & Bugfix**:
   - Behebung eines `ReferenceError: roomAliases is not defined` Fehlers beim Speichern der Einstellungen im Frontend.
