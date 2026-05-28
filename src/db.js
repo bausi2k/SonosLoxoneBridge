@@ -114,12 +114,12 @@ function getLogs(filters = {}) {
 
     if (filters.category && filters.category !== 'all') {
       query += ' AND category = ?';
-      params.push(filters.category);
+      params.push(filters.category.toUpperCase());
     }
 
     if (filters.level && filters.level !== 'all') {
       query += ' AND level = ?';
-      params.push(filters.level);
+      params.push(filters.level.toUpperCase());
     }
 
     if (filters.days && !isNaN(parseInt(filters.days, 10))) {

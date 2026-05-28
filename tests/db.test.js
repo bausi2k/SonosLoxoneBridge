@@ -53,6 +53,15 @@ describe('SQLite Database Logging Manager', () => {
     expect(warnLogs[0].level).toBe('WARN');
   });
 
+  test('should handle lowercase filter values', () => {
+    insertLog('INBOUND', 'INFO', 'Loxone inbound request');
+    
+    const logs = getLogs({ category: 'inbound', level: 'info' });
+    expect(logs.length).toBe(1);
+    expect(logs[0].category).toBe('INBOUND');
+    expect(logs[0].level).toBe('INFO');
+  });
+
   test('should clear all logs', () => {
     insertLog('SYSTEM', 'INFO', 'Temporary message');
     expect(getLogs().length).toBe(1);
