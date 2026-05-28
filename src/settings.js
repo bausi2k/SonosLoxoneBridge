@@ -10,7 +10,8 @@ const DEFAULT_SETTINGS = {
   loxonePort: 7777,
   ttsLanguage: 'de',
   staticSpeakerIps: [],
-  roomAliases: {}
+  roomAliases: {},
+  enableDatabaseLogs: false
 };
 
 let currentSettings = { ...DEFAULT_SETTINGS };

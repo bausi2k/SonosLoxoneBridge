@@ -937,7 +937,7 @@ function getActiveRooms() {
  * Gets detailed room states including IP, volume, and playback state.
  */
 function getRoomStates() {
-  return devices.map(d => {
+  const list = devices.map(d => {
     const norm = normalizeRoomName(d.Name);
     const state = deviceStates[norm] || { volume: -1, isPlaying: null, currentTrack: null, playMode: 'NORMAL', batteryLevel: null, isCharging: false };
     return {
@@ -953,6 +953,7 @@ function getRoomStates() {
       isOffline: !!state.isOffline
     };
   });
+  return list.sort((a, b) => a.name.localeCompare(b.name, 'de', { sensitivity: 'base' }));
 }
 
 const fs = require('fs');

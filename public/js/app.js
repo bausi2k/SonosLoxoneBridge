@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCopyLogs = document.getElementById('btn-copy-logs');
   const btnClearLogs = document.getElementById('btn-clear-logs');
   let logPollInterval = null;
+  let activeLogCategory = 'all';
 
   // Fetch bridge logs
   async function fetchLogs() {
@@ -66,8 +67,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
+    const daysSelect = document.getElementById('filter-log-days');
+    const levelSelect = document.getElementById('filter-log-level');
+    const days = daysSelect ? daysSelect.value : '1';
+    const level = levelSelect ? levelSelect.value : 'all';
+    
+    const url = `/api/logs?category=${activeLogCategory}&days=${days}&level=${level}`;
+    
     try {
-      const response = await fetch('/api/logs');
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success && data.logs) {
         renderLogs(data.logs);
@@ -82,17 +90,42 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!logConsole) return;
     
     let html = '';
-    logs.forEach(line => {
-      let cssClass = 'log-info';
-      if (line.includes('[WARN]')) {
-        cssClass = 'log-warn';
-      } else if (line.includes('[ERROR]')) {
-        cssClass = 'log-error';
+    logs.forEach(log => {
+      let levelClass = 'log-info';
+      if (log.level === 'WARN') {
+        levelClass = 'log-warn';
+      } else if (log.level === 'ERROR') {
+        levelClass = 'log-error';
       }
-      html += `<span class="${cssClass}">${escapeHtml(line)}\n</span>`;
+      
+      const timeStr = new Date(log.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const catBadge = `<span class="log-badge badge-${log.category.toLowerCase()}" style="font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; font-weight: bold; margin-right: 0.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);">${log.category}</span>`;
+      
+      let detailsHtml = '';
+      if (log.details) {
+        detailsHtml = `
+          <details class="log-details-block" style="margin-top: 0.25rem; font-size: 0.8rem; background: rgba(0,0,0,0.15); padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color);">
+            <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.75rem; user-select: none;">Details anzeigen</summary>
+            <pre style="margin-top: 0.25rem; white-space: pre-wrap; font-family: monospace; color: var(--text-muted); max-height: 150px; overflow-y: auto;">${escapeHtml(JSON.stringify(log.details, null, 2))}</pre>
+          </details>
+        `;
+      }
+      
+      html += `
+        <div class="log-row ${levelClass}" style="margin-bottom: 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 0.4rem;">
+          <span class="log-time" style="color: var(--text-muted); font-size: 0.85rem; margin-right: 0.4rem;">[${timeStr}]</span>
+          ${catBadge}
+          <span class="log-message-text" style="word-break: break-all;">${escapeHtml(log.message)}</span>
+          ${detailsHtml}
+        </div>
+      `;
     });
     
-    const isAtBottom = logConsole.scrollHeight - logConsole.clientHeight <= logConsole.scrollTop + 50;
+    if (logs.length === 0) {
+      html = '<div style="text-align: center; color: var(--text-muted); padding: 1rem;">Keine Log-Einträge gefunden</div>';
+    }
+    
+    const isAtBottom = logConsole.scrollHeight - logConsole.clientHeight <= logConsole.scrollTop + 80;
     
     logConsole.innerHTML = html;
     
@@ -297,6 +330,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const staticIps = settings.staticSpeakerIps || [];
     document.getElementById('settings-static-ips').value = staticIps.join('\n');
+
+    const dbLogsCheckbox = document.getElementById('settings-db-logs');
+    if (dbLogsCheckbox) {
+      dbLogsCheckbox.checked = settings.enableDatabaseLogs === true;
+    }
+
+    const dbStatus = document.getElementById('log-db-status');
+    if (dbStatus) {
+      dbStatus.textContent = settings.enableDatabaseLogs ? 'SQLite Aktiv' : 'RAM (Temporär)';
+      dbStatus.style.borderColor = settings.enableDatabaseLogs ? 'var(--color-orange)' : 'var(--border-color)';
+    }
 
     currentAliases = settings.roomAliases || {};
     renderAliasList();
@@ -585,7 +629,13 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="volume-slider-container">
               <span class="volume-icon" id="volume-icon-${normalizeSelector(room.name)}"><span class="material-symbols-outlined">${volIcon}</span></span>
+              <button type="button" class="btn-vol-adjust btn-vol-down" data-room="${escapeHtml(room.name)}" title="Leiser (-2%)">
+                <span class="material-symbols-outlined">remove</span>
+              </button>
               <input type="range" class="volume-slider" data-room="${escapeHtml(room.name)}" min="0" max="100" value="${room.volume}" style="--value: ${room.volume}%">
+              <button type="button" class="btn-vol-adjust btn-vol-up" data-room="${escapeHtml(room.name)}" title="Lauter (+2%)">
+                <span class="material-symbols-outlined">add</span>
+              </button>
             </div>
           </div>
 
@@ -994,6 +1044,39 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(fetchStatus, 500);
     });
 
+    // Volume adjustments (+/- buttons)
+    speakersGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-vol-adjust');
+      if (!btn) return;
+      e.preventDefault();
+      
+      const room = btn.getAttribute('data-room');
+      const isUp = btn.classList.contains('btn-vol-up');
+      const step = 2;
+      const selector = normalizeSelector(room);
+      
+      const slider = document.querySelector(`.volume-slider[data-room="${CSS.escape(room)}"]`);
+      if (slider) {
+        let val = parseInt(slider.value, 10);
+        val = isUp ? Math.min(100, val + step) : Math.max(0, val - step);
+        slider.value = val;
+        slider.style.setProperty('--value', val + '%');
+        
+        const valText = document.getElementById(`volume-val-${selector}`);
+        const volIcon = document.getElementById(`volume-icon-${selector}`);
+        if (valText) valText.textContent = `${val}%`;
+        
+        let icon = 'volume_mute';
+        if (val > 66) icon = 'volume_up';
+        else if (val > 33) icon = 'volume_down';
+        else if (val > 0) icon = 'volume_mute';
+        else icon = 'volume_off';
+        if (volIcon) volIcon.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
+        
+        sendVolumeUpdate(room, val);
+      }
+    });
+
     // 9. Favorites Dropdown selection change
     speakersGrid.addEventListener('change', async (e) => {
       const dropdown = e.target.closest('.favorites-dropdown');
@@ -1099,7 +1182,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .map(ip => ip.trim())
       .filter(ip => ip.length > 0);
 
-    const roomAliases = currentAliases;
+    const enableDatabaseLogs = document.getElementById('settings-db-logs').checked;
 
     const payload = {
       port,
@@ -1107,7 +1190,8 @@ document.addEventListener('DOMContentLoaded', () => {
       loxonePort,
       ttsLanguage,
       staticSpeakerIps,
-      roomAliases
+      roomAliases,
+      enableDatabaseLogs
     };
 
     try {
@@ -1564,8 +1648,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function setupLogFilters() {
+    const container = document.querySelector('.log-category-tabs');
+    const daysSelect = document.getElementById('filter-log-days');
+    const levelSelect = document.getElementById('filter-log-level');
+    
+    if (container) {
+      container.addEventListener('click', (e) => {
+        const btn = e.target.closest('.log-tab-btn');
+        if (!btn) return;
+        e.preventDefault();
+        
+        container.querySelectorAll('.log-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        activeLogCategory = btn.getAttribute('data-category');
+        fetchLogs();
+      });
+    }
+    
+    if (daysSelect) {
+      daysSelect.addEventListener('change', () => fetchLogs());
+    }
+    if (levelSelect) {
+      levelSelect.addEventListener('change', () => fetchLogs());
+    }
+  }
+
   // Initialize and start polling
   setupAliasManager();
+  setupLogFilters();
   setupEventDelegation();
   fetchStatus(true);
   pollInterval = setInterval(fetchStatus, 3000);

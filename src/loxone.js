@@ -41,7 +41,7 @@ function sendUdp(message) {
     if (err) {
       console.error(`[Loxone] Failed to send UDP message to ${ip}:${port} - Error:`, err);
     } else {
-      console.log(`[Loxone] UDP Sent -> ${ip}:${port} - "${message}"`);
+      console.log(`[Outbound] UDP Sent -> ${ip}:${port} - "${message}"`);
     }
   });
 }

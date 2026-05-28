@@ -1,38 +1,10 @@
-const maxLogLines = 100;
-global.bridgeLogs = global.bridgeLogs || [];
+const { hookConsole, info } = require('./logger');
+const { initDb, getLogs, clearLogs } = require('./db');
 
-const originalLog = console.log;
-const originalError = console.error;
-const originalWarn = console.warn;
-
-function formatLogLine(type, args) {
-  const timestamp = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const message = args.map(arg => {
-    if (arg instanceof Error) {
-      return arg.message + (arg.stack ? '\n' + arg.stack : '');
-    }
-    return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
-  }).join(' ');
-  return `[${timestamp}] [${type}] ${message}`;
-}
-
-console.log = function(...args) {
-  originalLog.apply(console, args);
-  global.bridgeLogs.push(formatLogLine('INFO', args));
-  if (global.bridgeLogs.length > maxLogLines) global.bridgeLogs.shift();
-};
-
-console.error = function(...args) {
-  originalError.apply(console, args);
-  global.bridgeLogs.push(formatLogLine('ERROR', args));
-  if (global.bridgeLogs.length > maxLogLines) global.bridgeLogs.shift();
-};
-
-console.warn = function(...args) {
-  originalWarn.apply(console, args);
-  global.bridgeLogs.push(formatLogLine('WARN', args));
-  if (global.bridgeLogs.length > maxLogLines) global.bridgeLogs.shift();
-};
+// Hook console logs to capture system output
+hookConsole();
+// Initialize database (registers memory or file-based target based on settings)
+initDb();
 
 const express = require('express');
 const path = require('path');
@@ -68,6 +40,33 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Middleware to log incoming API/Loxone control calls
+app.use((req, res, next) => {
+  // Skip static files or status/log poll to avoid spamming system logs
+  if (
+    req.path.startsWith('/css/') || 
+    req.path.startsWith('/js/') || 
+    req.path.startsWith('/clips/') || 
+    req.path === '/api/status' || 
+    req.path === '/api/logs' ||
+    req.path === '/favicon.ico'
+  ) {
+    return next();
+  }
+  
+  const { insertLog } = require('./db');
+  const details = {
+    method: req.method,
+    ip: req.ip || req.connection.remoteAddress,
+    query: req.query,
+    body: req.method === 'POST' ? req.body : null
+  };
+  
+  const message = `${req.method} ${req.originalUrl}`;
+  insertLog('INBOUND', 'INFO', message, details);
+  next();
+});
 
 // Periodic TTS cleanup job (every 10 minutes, files older than 5 minutes)
 const TTS_CLEANUP_INTERVAL = 10 * 60 * 1000;
@@ -366,6 +365,12 @@ app.post('/api/settings', async (req, res) => {
     return res.status(500).json({ success: false, error: 'Failed to write settings' });
   }
 
+  // If database logs configuration changed, re-initialize database
+  if (currentSettings.enableDatabaseLogs !== newSettings.enableDatabaseLogs) {
+    console.log(`[Database] Database logging configuration changed to: ${newSettings.enableDatabaseLogs}`);
+    initDb();
+  }
+
   // If static speaker IPs changed, re-initialize Sonos connection
   const ipListChanged = JSON.stringify(currentSettings.staticSpeakerIps) !== JSON.stringify(newSettings.staticSpeakerIps);
   if (ipListChanged) {
@@ -472,14 +477,20 @@ app.post('/api/discover', async (req, res) => {
 
 // GET /api/logs
 app.get('/api/logs', (req, res) => {
-  res.json({ success: true, logs: global.bridgeLogs || [] });
+  const { category, days, level } = req.query;
+  const logs = getLogs({ category, days, level });
+  res.json({ success: true, logs });
 });
 
 // POST /api/logs/clear
 app.post('/api/logs/clear', (req, res) => {
-  global.bridgeLogs = [];
-  console.log('[Bridge] System-Protokoll gelöscht.');
-  res.json({ success: true, message: 'Logs cleared successfully' });
+  const success = clearLogs();
+  if (success) {
+    console.log('[Bridge] System-Protokoll gelöscht.');
+    res.json({ success: true, message: 'Logs cleared successfully' });
+  } else {
+    res.status(500).json({ success: false, error: 'Failed to clear logs' });
+  }
 });
 
 

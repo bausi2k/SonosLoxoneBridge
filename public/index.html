@@ -189,6 +189,14 @@
                 <small class="help-text">Wichtig, falls Auto-Discovery im Docker-Container blockiert ist.</small>
               </div>
 
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="checkbox" id="settings-db-logs" name="enableDatabaseLogs" style="width: auto; margin: 0;">
+                  <span>Detaillierte Statistik & Log-Historie in SQLite speichern</span>
+                </label>
+                <small class="help-text">Speichert Logs dauerhaft im config-Ordner. Deaktivieren für Raspberry Pis mit SD-Karten (RAM-Puffer).</small>
+              </div>
+
               <div class="form-group">
                 <label class="label-with-tooltip">
                   Raum-Aliases (Optional)
@@ -241,8 +249,44 @@
 
             <!-- System Log Console Card -->
             <div class="glass-card console-card">
-              <h3>System-Protokoll</h3>
+              <div class="console-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <h3>System-Protokoll</h3>
+                <span id="log-db-status" class="status-badge" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--border-color);">RAM (Temporär)</span>
+              </div>
               <p class="console-intro">Echtzeit-Ansicht der Brücken-Aktivitäten und eventueller Fehler.</p>
+              
+              <!-- Log Filters -->
+              <div class="log-filters" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+                <!-- Category Tabs -->
+                <div class="log-category-tabs" style="display: flex; gap: 0.5rem; flex-wrap: wrap; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                  <button type="button" class="log-tab-btn active" data-category="all" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 4px 8px; border-radius: 6px; font-weight: bold;">Alle</button>
+                  <button type="button" class="log-tab-btn" data-category="inbound" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 4px 8px; border-radius: 6px; font-weight: bold;">Inbound (Loxone)</button>
+                  <button type="button" class="log-tab-btn" data-category="outbound" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 4px 8px; border-radius: 6px; font-weight: bold;">Outbound (UDP)</button>
+                  <button type="button" class="log-tab-btn" data-category="system" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 4px 8px; border-radius: 6px; font-weight: bold;">System</button>
+                </div>
+                
+                <!-- Query Filters -->
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                  <div class="select-wrapper" style="flex: 1; min-width: 120px;">
+                    <select id="filter-log-days" style="padding: 0.4rem 0.6rem; font-size: 0.85rem; border-radius: 8px;">
+                      <option value="1">Heute</option>
+                      <option value="3">Letzte 3 Tage</option>
+                      <option value="7">Letzte 7 Tage</option>
+                      <option value="all">Unbegrenzt</option>
+                    </select>
+                  </div>
+                  
+                  <div class="select-wrapper" style="flex: 1; min-width: 120px;">
+                    <select id="filter-log-level" style="padding: 0.4rem 0.6rem; font-size: 0.85rem; border-radius: 8px;">
+                      <option value="all">Alle Level</option>
+                      <option value="info">Info</option>
+                      <option value="warn">Warnung</option>
+                      <option value="error">Fehler</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <pre id="log-console" class="log-console-pre"></pre>
               <div class="console-actions">
                 <button type="button" id="btn-copy-logs" class="btn btn-secondary">

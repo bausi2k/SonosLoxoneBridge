@@ -331,9 +331,9 @@ describe('Express REST & Inbound API', () => {
         expect(res.body.success).toBe(true);
         expect(Array.isArray(res.body.logs)).toBe(true);
         
-        const infoLog = res.body.logs.find(line => line.includes('[INFO]') && line.includes('[Test] This is an info log'));
-        const warnLog = res.body.logs.find(line => line.includes('[WARN]') && line.includes('[Test] This is a warn log'));
-        const errorLog = res.body.logs.find(line => line.includes('[ERROR]') && line.includes('[Test] This is an error log'));
+        const infoLog = res.body.logs.find(log => log.level === 'INFO' && log.message.includes('[Test] This is an info log'));
+        const warnLog = res.body.logs.find(log => log.level === 'WARN' && log.message.includes('[Test] This is a warn log'));
+        const errorLog = res.body.logs.find(log => log.level === 'ERROR' && log.message.includes('[Test] This is an error log'));
 
         expect(infoLog).toBeDefined();
         expect(warnLog).toBeDefined();
@@ -351,7 +351,7 @@ describe('Express REST & Inbound API', () => {
 
         res = await request(app).get('/api/logs');
         expect(res.body.logs.length).toBe(1);
-        expect(res.body.logs[0]).toContain('System-Protokoll gelöscht');
+        expect(res.body.logs[0].message).toContain('System-Protokoll gelöscht');
       });
     });
   });
