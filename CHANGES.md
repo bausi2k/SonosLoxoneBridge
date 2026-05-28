@@ -2,6 +2,14 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.4.2] - 2026-05-28
+- **UI-Lautstärkensteuerung & SQLite-Logging**:
+  - Hinzufügen von +/- Buttons im UI zur Anpassung der Lautstärke in 2%-Schritten.
+  - Optionales, persistentes Logging via SQLite (`statistics.db`) im config-Ordner (standardmäßig deaktiviert für materialschonenden RAM-Betrieb auf Raspberry Pis).
+  - Strukturierte, granular nach Inbound/Outbound/System filterbare Log-Tabs im Dashboard.
+  - Alphabetische Sortierung der Sonos-Lautsprecher (aufsteigend) im UI.
+  - Option zum Ausführen des Containers als spezifischer Host-User (`user: "1036:100"`) in der `docker-compose.yml` zur Vermeidung von `EACCES` Permission-Fehlern.
+
 ## [0.4.1] - 2026-05-28
 - **Persistierung & Docker-Verbesserungen**:
   - Hinzufügen von Volume-Mappings für `/app/presets` (Gruppen-Presets) und `/app/public/clips` (eigene Audio-Benachrichtigungen) in `docker-compose.yml`, um Datenverlust beim Neuerstellen des Containers zu verhindern.
