@@ -2,6 +2,10 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.4.5] - 2026-05-28
+- **Bugfix für TTS-Berechtigung**:
+  - Freigabe der Berechtigungen für das temporäre TTS-Verzeichnis (`/app/public/temp/tts` auf `chmod 777`) im Dockerfile, um Schreibfehler (`EACCES`) beim Generieren von Sprachansagen unter benutzerdefinierten Host-UserIDs (wie UID 1036) zu vermeiden.
+
 ## [0.4.4] - 2026-05-28
 - **Bugfix für leeres SQLite-Protokoll**:
   - Behebung von leeren Log-Anzeigen im Web-UI bei aktivierter SQLite-Datenbank durch Normalisierung der Groß-/Kleinschreibung bei SQL-Filterabfragen.
