@@ -6,9 +6,9 @@ services:
     restart: unless-stopped
     # Use host networking mode to allow UPnP/SSDP Sonos auto-discovery on the LAN
     network_mode: host
-    # Falls Schreibrechte-Fehler (EACCES) auf Synology/Linux auftreten,
-    # kann der Container als root ausgeführt oder die UID angepasst werden:
-    # user: "root"
+    # Führt den Container als User 1036 (muschmusch) und Gruppe 100 (users) aus,
+    # um Schreibrechte-Fehler (EACCES) auf dem Host-System zu vermeiden:
+    user: "1036:100"
     volumes:
       # Map the local config folder for persistent JSON settings
       - ./config:/app/config
