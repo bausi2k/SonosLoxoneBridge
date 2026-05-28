@@ -1,5 +1,16 @@
 # Changes SonosLoxoneBridge
 
+## [0.4.0] - 2026-05-28
+- **Interaktiver Raum-Alias-Manager**:
+  - Ersatz des JSON-Textfeldes in den Einstellungen durch eine benutzerfreundliche UI mit Dropdown-Auswahl der Lautsprecher und Direkt-Eingabe.
+  - Live-Syntaxprüfung für zulässige Zeichen (nur Alphanumerisch und Unterstriche) bei Alias-Namen.
+  - Dynamisches Hinzufügen und Entfernen von Mappings direkt im Webinterface.
+- **GitHub Actions Workflow für Container-Build**:
+  - Automatisches Erstellen von Multi-Plattform Docker-Images (`amd64`, `arm64`) bei Tag-Push und Veröffentlichung in der GitHub Packages Registry (`ghcr.io`).
+  - Automatisches Erstellen von Releases basierend auf den Änderungseinträgen in `CHANGES.md`.
+- **Behebung von Test-Hängern**:
+  - Fehlerbehebung bei der Testausführung, indem Sleep-Timer aus Presets beim Beenden der Test-Suite gecancelt werden.
+
 ## [0.3.0] - 2026-05-27
 - **Robustes Offline-Handling für batteriebetriebene Lautsprecher**:
   - Automatisches Erkennen von Netzwerk-Timeouts (`ETIMEDOUT`, `EHOSTUNREACH`, `ECONNREFUSED` etc.) bei batteriebetriebenen Lautsprechern.
