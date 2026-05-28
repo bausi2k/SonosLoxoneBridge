@@ -1,5 +1,7 @@
 # SonosLoxoneBridge
 
+[![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
+
 Eine moderne, leichtgewichtige und vollständig lokale Node.js-Brücke zur bidirektionalen Integration von Sonos-Lautsprechern mit dem Loxone Miniserver – komplett ohne Cloud-Zwang. 
 
 Dieses Projekt dient als moderner Ersatz für die veraltete `node-sonos-http-api`. Es bietet eine REST-API für eingehende Befehle (Inbound), sendet Statusänderungen sofort via UDP an Loxone (Outbound) und verfügt über eine ansprechende Web-Oberfläche im Premium Glassmorphism-Design zur Steuerung und Konfiguration.

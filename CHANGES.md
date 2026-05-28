@@ -1,5 +1,7 @@
 # Changes SonosLoxoneBridge
 
+[![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
+
 ## [0.4.0] - 2026-05-28
 - **Interaktiver Raum-Alias-Manager**:
   - Ersatz des JSON-Textfeldes in den Einstellungen durch eine benutzerfreundliche UI mit Dropdown-Auswahl der Lautsprecher und Direkt-Eingabe.
