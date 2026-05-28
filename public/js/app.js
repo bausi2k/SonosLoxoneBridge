@@ -284,6 +284,11 @@ document.addEventListener('DOMContentLoaded', () => {
         bridgeIpDisplay.textContent = data.bridgeIp;
         currentRooms = data.rooms;
 
+        const versionDisplay = document.getElementById('version-display');
+        if (versionDisplay && data.version) {
+          versionDisplay.textContent = `v${data.version}`;
+        }
+
         if (isInitial && data.settings) {
           populateSettingsForm(data.settings);
         }

@@ -1985,3 +1985,24 @@ body {
   font-size: 1rem;
 }
 
+/* Version Tag */
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.settings-header h3 {
+  margin: 0;
+}
+.version-tag {
+  font-size: 0.75rem;
+  background: var(--bg-main);
+  color: var(--color-orange);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  letter-spacing: 0.05em;
+}
+

@@ -231,11 +231,13 @@ app.get('/preset/:name', async (req, res) => {
 app.get('/api/status', (req, res) => {
   const settings = getSettings();
   const rooms = getRoomStates();
+  const pkg = require('../package.json');
   res.json({
     success: true,
     settings,
     rooms,
-    bridgeIp: settings.bridgeIp || getLocalIp()
+    bridgeIp: settings.bridgeIp || getLocalIp(),
+    version: pkg.version
   });
 });
 
