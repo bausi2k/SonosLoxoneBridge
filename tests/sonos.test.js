@@ -9,6 +9,7 @@ const {
   setRoomVolume, 
   playFavorite, 
   sayRoom, 
+  playTuneIn,
   getActiveRooms,
   stopPolling,
   getRoomStates,
@@ -379,6 +380,36 @@ describe('Sonos Integration', () => {
       volume: 50,
       timeout: 20,
       onlyWhenPlaying: false
+    });
+  });
+
+  describe('playTuneIn', () => {
+    test('should successfully play TuneIn station using modern S2 stream format', async () => {
+      mockDevice.AVTransportService.SetAVTransportURI.mockResolvedValueOnce(true);
+      await playTuneIn('wohnzimmer', '68225');
+      
+      expect(mockDevice.AVTransportService.SetAVTransportURI).toHaveBeenCalledWith({
+        InstanceID: 0,
+        CurrentURI: 'x-sonosapi-stream:tunein:68225?sid=303&flags=8232&sn=1',
+        CurrentURIMetaData: expect.stringContaining('SA_RINCON303_')
+      });
+      expect(mockDevice.Play).toHaveBeenCalled();
+    });
+
+    test('should fallback to legacy S1 format if modern format fails', async () => {
+      mockDevice.AVTransportService.SetAVTransportURI
+        .mockRejectedValueOnce(new Error('UPnPError 402'))
+        .mockResolvedValueOnce(true);
+      
+      await playTuneIn('wohnzimmer', '68225');
+      
+      expect(mockDevice.AVTransportService.SetAVTransportURI).toHaveBeenCalledTimes(2);
+      expect(mockDevice.AVTransportService.SetAVTransportURI).toHaveBeenLastCalledWith({
+        InstanceID: 0,
+        CurrentURI: 'x-sonosapi-stream:s68225?sid=254&flags=8224&sn=0',
+        CurrentURIMetaData: expect.stringContaining('SA_RINCON254_')
+      });
+      expect(mockDevice.Play).toHaveBeenCalled();
     });
   });
 

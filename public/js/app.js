@@ -344,6 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderSpeakers();
         updateAliasSpeakerDropdown();
+        updateManualSpeakerDropdown();
         
         // Fetch favorites for any newly discovered rooms
         currentRooms.forEach(room => {
@@ -404,6 +405,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Update manual tab dropdown with available speakers
+  function updateManualSpeakerDropdown() {
+    const select = document.getElementById('manual-speaker-select');
+    if (!select) return;
+
+    const currentValue = select.value;
+    select.innerHTML = '<option value="" style="background: #1a1a1a;">-- Bitte Lautsprecher auswählen --</option>';
+
+    // Sort current rooms alphabetically
+    const sortedRooms = [...currentRooms].sort((a, b) => a.name.localeCompare(b.name));
+
+    sortedRooms.forEach(room => {
+      const opt = document.createElement('option');
+      opt.value = room.name;
+      opt.textContent = room.name;
+      opt.style.background = '#1a1a1a';
+      select.appendChild(opt);
+    });
+
+    if (currentValue && sortedRooms.some(r => r.name === currentValue)) {
+      select.value = currentValue;
+    } else if (currentValue) {
+      // Clear commands if previously selected speaker is no longer present
+      const cmdContainer = document.getElementById('manual-speaker-commands');
+      if (cmdContainer) {
+        cmdContainer.innerHTML = '';
+        cmdContainer.classList.add('hidden');
+      }
+    }
+  }
+
   // Render alias list items
   function renderAliasList() {
     const listContainer = document.getElementById('alias-list');
@@ -445,6 +477,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         roomFavorites[roomName] = data.favorites || [];
         updateFavoritesDropdown(roomName);
+        
+        // Refresh manual commands list if the speaker is currently selected
+        const manualSelect = document.getElementById('manual-speaker-select');
+        if (manualSelect && manualSelect.value === roomName) {
+          manualSelect.dispatchEvent(new Event('change'));
+        }
       } else {
         console.error(`Could not load favorites for room "${roomName}":`, data);
       }
@@ -1713,9 +1751,164 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Helper to copy text to clipboard
+  async function copyTextToClipboard(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (!successful) throw new Error('copy command failed');
+      }
+      return true;
+    } catch (err) {
+      console.error('[Manual Commands] Clipboard write failed:', err);
+      return false;
+    }
+  }
+
+  // Setup speaker-specific commands in Anleitung tab
+  function setupManualSpeakerCommands() {
+    const select = document.getElementById('manual-speaker-select');
+    const container = document.getElementById('manual-speaker-commands');
+    if (!select || !container) return;
+
+    select.addEventListener('change', () => {
+      const roomName = select.value;
+      if (!roomName) {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+        return;
+      }
+
+      // Get current bridge IP & Port
+      const bridgeIp = document.getElementById('manual-bridge-ip')?.textContent || window.location.hostname;
+      const bridgePort = document.getElementById('manual-bridge-port')?.textContent || window.location.port;
+      const baseUrl = `http://${bridgeIp}${bridgePort ? ':' + bridgePort : ''}`;
+      const normRoom = encodeURIComponent(roomName);
+
+      // Define default commands
+      const commands = [
+        {
+          method: 'GET',
+          path: `/${normRoom}/play`,
+          desc: 'Startet die Musikwiedergabe in diesem Raum.'
+        },
+        {
+          method: 'GET',
+          path: `/${normRoom}/pause`,
+          desc: 'Pausiert die Musikwiedergabe in diesem Raum.'
+        },
+        {
+          method: 'GET',
+          path: `/${normRoom}/volume/25`,
+          desc: 'Setzt die Lautstärke absolut auf einen Prozentwert (z. B. 25%).'
+        },
+        {
+          method: 'GET',
+          path: `/${normRoom}/volume/+5`,
+          desc: 'Erhöht die Lautstärke relativ um einen Wert (z. B. +5%).'
+        },
+        {
+          method: 'GET',
+          path: `/${normRoom}/volume/-10`,
+          desc: 'Verringert die Lautstärke relativ um einen Wert (z. B. -10%).'
+        },
+        {
+          method: 'GET',
+          path: `/${normRoom}/say/${encodeURIComponent('Die Waschmaschine ist fertig')}/40`,
+          desc: 'Führt eine Sprachansage (TTS) mit optionaler Lautstärke (z. B. 40%) aus.'
+        },
+        {
+          method: 'GET',
+          path: `/${normRoom}/tunein/play/68225`,
+          desc: 'Spielt einen TuneIn-Radiosender über seine Stations-ID ab (z. B. 68225).'
+        },
+        {
+          method: 'GET',
+          path: `/${normRoom}/leave`,
+          desc: 'Trennt den Lautsprecher aus einer Gruppe, so dass er wieder eigenständig läuft.'
+        },
+        {
+          method: 'GET',
+          path: `/${normRoom}/clip/bell.mp3/50`,
+          desc: 'Spielt eine Sounddatei (z. B. bell.mp3) mit optionaler Lautstärke (z. B. 50%) ab.'
+        }
+      ];
+
+      // Add favorites if available
+      const favs = roomFavorites[roomName] || [];
+      favs.forEach(fav => {
+        commands.push({
+          method: 'GET',
+          path: `/${normRoom}/favorite/${encodeURIComponent(fav.title)}`,
+          desc: `Spielt den Sonos-Favoriten "${fav.title}" ab.`
+        });
+      });
+
+      // Render cards
+      container.innerHTML = '';
+      commands.forEach((cmd) => {
+        const fullUrl = `${baseUrl}${cmd.path}`;
+        const card = document.createElement('div');
+        card.className = 'api-endpoint-card';
+        card.innerHTML = `
+          <div class="endpoint-header" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div>
+              <span class="method">${cmd.method}</span>
+              <span class="path" style="word-break: break-all;">${cmd.path}</span>
+            </div>
+            <button class="btn-copy-cmd" data-url="${fullUrl}" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--text-muted); cursor: pointer; border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 4px; transition: all 0.2s ease; white-space: nowrap;">
+              <span class="material-symbols-outlined" style="font-size: 1rem;">content_copy</span> Kopieren
+            </button>
+          </div>
+          <p class="endpoint-desc">${cmd.desc}</p>
+          <div class="endpoint-example" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 6px; padding: 8px 12px; margin-top: 8px;">
+            <a href="${fullUrl}" target="_blank" class="endpoint-link" style="color: var(--color-blue); text-decoration: none; word-break: break-all; font-family: monospace; font-size: 0.95rem; flex-grow: 1; transition: color 0.2s ease;">${fullUrl}</a>
+            <span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--text-muted);">open_in_new</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      container.classList.remove('hidden');
+    });
+
+    // Add copy listener via event delegation
+    container.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-copy-cmd');
+      if (btn) {
+        e.preventDefault();
+        const url = btn.dataset.url;
+        const success = await copyTextToClipboard(url);
+        if (success) {
+          const originalText = btn.innerHTML;
+          btn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 1rem; color: var(--color-green);">check</span> Kopiert!`;
+          btn.style.borderColor = 'var(--color-green)';
+          btn.style.color = 'var(--color-green)';
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.borderColor = '';
+            btn.style.color = '';
+          }, 2000);
+        }
+      }
+    });
+  }
+
   // Initialize and start polling
   setupAliasManager();
   setupLogFilters();
+  setupManualSpeakerCommands();
   setupEventDelegation();
   fetchStatus(true);
   pollInterval = setInterval(fetchStatus, 3000);

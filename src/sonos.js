@@ -967,14 +967,29 @@ async function playTuneIn(roomName, stationId) {
   try {
     const device = getDevice(roomName);
     const encodedTuneInUri = encodeURIComponent(stationId);
-    const uri = `x-sonosapi-stream:s${encodedTuneInUri}?sid=254&flags=8224&sn=0`;
-    const metadata = `<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="F00092020s${encodedTuneInUri}" parentID="L" restricted="true"><dc:title>tunein</dc:title><upnp:class>object.item.audioItem.audioBroadcast</upnp:class><desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON254_</desc></item></DIDL-Lite>`;
     
-    await device.AVTransportService.SetAVTransportURI({
-      InstanceID: 0,
-      CurrentURI: uri,
-      CurrentURIMetaData: metadata
-    });
+    try {
+      console.log(`[Sonos Debug] Trying modern TuneIn (sid=303) for station ${stationId}`);
+      const uri = `x-sonosapi-stream:tunein:${encodedTuneInUri}?sid=303&flags=8232&sn=1`;
+      const metadata = `<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="F00092020tunein:${encodedTuneInUri}" parentID="L" restricted="true"><dc:title>tunein</dc:title><upnp:class>object.item.audioItem.audioBroadcast</upnp:class><desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON303_</desc></item></DIDL-Lite>`;
+      
+      await device.AVTransportService.SetAVTransportURI({
+        InstanceID: 0,
+        CurrentURI: uri,
+        CurrentURIMetaData: metadata
+      });
+    } catch (s2Err) {
+      console.warn(`[Sonos Debug] Modern TuneIn failed, trying legacy S1 format (sid=254) for station ${stationId}. Error: ${s2Err.message}`);
+      const uri = `x-sonosapi-stream:s${encodedTuneInUri}?sid=254&flags=8224&sn=0`;
+      const metadata = `<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="F00092020s${encodedTuneInUri}" parentID="L" restricted="true"><dc:title>tunein</dc:title><upnp:class>object.item.audioItem.audioBroadcast</upnp:class><desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON254_</desc></item></DIDL-Lite>`;
+      
+      await device.AVTransportService.SetAVTransportURI({
+        InstanceID: 0,
+        CurrentURI: uri,
+        CurrentURIMetaData: metadata
+      });
+    }
+    
     await device.Play();
     
     const norm = normalizeRoomName(device.Name);

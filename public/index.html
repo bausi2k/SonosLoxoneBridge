@@ -418,6 +418,20 @@
             </div>
           </div>
         </div>
+
+        <div class="glass-card manual-card" style="margin-top: 2rem;">
+          <h3>Lautsprecher-spezifische HTTP-Befehle</h3>
+          <p class="manual-intro">Wähle einen aktiven Lautsprecher aus, um direkt einsatzbereite, personalisierte HTTP-URLs zu erhalten:</p>
+          <div class="speaker-select-wrapper" style="margin-bottom: 1.5rem;">
+            <select id="manual-speaker-select" class="form-control" style="width: 100%; max-width: 350px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-color); border-radius: 8px; padding: 10px 14px; font-size: 1rem; outline: none; cursor: pointer;">
+              <option value="" style="background: #1a1a1a;">-- Bitte Lautsprecher auswählen --</option>
+            </select>
+          </div>
+          
+          <div id="manual-speaker-commands" class="api-endpoints hidden">
+            <!-- Wird dynamisch per JS befüllt -->
+          </div>
+        </div>
       </section>
     </main>
 
