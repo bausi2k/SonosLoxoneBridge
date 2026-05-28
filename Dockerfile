@@ -19,7 +19,8 @@ COPY public/ ./public/
 
 # Ensure directory for persistent config and temporary TTS caches exists
 RUN mkdir -p /app/config /app/public/temp/tts && \
-    chown -R node:node /app
+    chown -R node:node /app && \
+    chmod -R 777 /app/public/temp/tts
 
 # Switch to non-root user for security
 USER node
