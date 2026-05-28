@@ -1,6 +1,6 @@
 services:
   sonosloxonebridge:
-    build: .
+    # build: . # Nur für lokale Entwicklung nötig. Entfernen/Auskommentieren nutzt das fertige GitHub-Image:
     image: ghcr.io/bausi2k/sonosloxonebridge:latest
     container_name: sonosloxonebridge
     restart: unless-stopped
