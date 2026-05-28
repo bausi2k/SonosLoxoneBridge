@@ -2,8 +2,9 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
-## [0.4.2] - 2026-05-28
-- **UI-Lautstärkensteuerung & SQLite-Logging**:
+## [0.4.3] - 2026-05-28
+- **UI-Lautstärkensteuerung, SQLite-Logging & Bugfix**:
+  - Behebung eines `ReferenceError: roomAliases is not defined` Fehlers beim Speichern der Einstellungen im Frontend.
   - Hinzufügen von +/- Buttons im UI zur Anpassung der Lautstärke in 2%-Schritten.
   - Optionales, persistentes Logging via SQLite (`statistics.db`) im config-Ordner (standardmäßig deaktiviert für materialschonenden RAM-Betrieb auf Raspberry Pis).
   - Strukturierte, granular nach Inbound/Outbound/System filterbare Log-Tabs im Dashboard.
