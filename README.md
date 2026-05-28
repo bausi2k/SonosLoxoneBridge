@@ -48,8 +48,6 @@ Sonos-Discovery basiert auf UPnP (SSDP) über Multicast. Damit dies reibungslos 
 Erstellen Sie eine `docker-compose.yml` (im Repository enthalten):
 
 ```yaml
-version: '3.8'
-
 services:
   sonosloxonebridge:
     build: .
