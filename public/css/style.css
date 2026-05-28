@@ -1952,6 +1952,53 @@ body {
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* Log Category Badges */
+.log-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.badge-inbound {
+  background: rgba(0, 122, 255, 0.15);
+  color: #3897ff;
+  border: 1px solid rgba(0, 122, 255, 0.3);
+}
+.badge-outbound {
+  background: rgba(52, 199, 89, 0.15);
+  color: #30d158;
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+.badge-system {
+  background: rgba(255, 149, 0, 0.15);
+  color: #ff9f0a;
+  border: 1px solid rgba(255, 149, 0, 0.3);
+}
+.badge-sonos {
+  background: rgba(142, 142, 147, 0.15);
+  color: #98989d;
+  border: 1px solid rgba(142, 142, 147, 0.3);
+}
+.badge-tts {
+  background: rgba(191, 90, 242, 0.15);
+  color: #bf5af2;
+  border: 1px solid rgba(191, 90, 242, 0.3);
+}
+
+/* Log level colors */
+.log-info .log-message-text {
+  color: #e5e5e0;
+}
+.log-warn .log-message-text {
+  color: #ffcc00;
+}
+.log-error .log-message-text {
+  color: #ff453a;
+}
+
 /* Volume Adjust Buttons */
 .volume-slider-container {
   display: flex;

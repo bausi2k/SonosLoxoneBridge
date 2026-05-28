@@ -99,23 +99,27 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       const timeStr = new Date(log.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const catBadge = `<span class="log-badge badge-${log.category.toLowerCase()}" style="font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; font-weight: bold; margin-right: 0.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);">${log.category}</span>`;
+      const catBadge = `<span class="log-badge badge-${log.category.toLowerCase()}">${log.category}</span>`;
       
       let detailsHtml = '';
+      let hasDetailsClass = '';
       if (log.details) {
+        hasDetailsClass = 'has-details';
         detailsHtml = `
-          <details class="log-details-block" style="margin-top: 0.25rem; font-size: 0.8rem; background: rgba(0,0,0,0.15); padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color);">
-            <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.75rem; user-select: none;">Details anzeigen</summary>
-            <pre style="margin-top: 0.25rem; white-space: pre-wrap; font-family: monospace; color: var(--text-muted); max-height: 150px; overflow-y: auto;">${escapeHtml(JSON.stringify(log.details, null, 2))}</pre>
-          </details>
+          <div class="log-details-expanded" style="display: none; width: 100%; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+            <pre style="margin: 0; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: #a1a1a6; font-size: 0.75rem; white-space: pre-wrap; font-family: monospace;">${escapeHtml(JSON.stringify(log.details, null, 2))}</pre>
+          </div>
         `;
       }
       
       html += `
-        <div class="log-row ${levelClass}" style="margin-bottom: 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 0.4rem;">
-          <span class="log-time" style="color: var(--text-muted); font-size: 0.85rem; margin-right: 0.4rem;">[${timeStr}]</span>
-          ${catBadge}
-          <span class="log-message-text" style="word-break: break-all;">${escapeHtml(log.message)}</span>
+        <div class="log-item ${hasDetailsClass}" data-id="${log.id}" style="border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0.35rem 0.5rem; transition: background 0.2s;">
+          <div class="log-row-header ${levelClass}" style="display: flex; align-items: center; gap: 0.75rem; cursor: ${log.details ? 'pointer' : 'default'}; min-height: 24px;">
+            <span class="log-time" style="color: #8a9ab0; font-family: monospace; font-size: 0.8rem; flex-shrink: 0; letter-spacing: 0.05em;">[${timeStr}]</span>
+            ${catBadge}
+            <span class="log-message-text" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; font-family: monospace; font-weight: 500;">${escapeHtml(log.message)}</span>
+            ${log.details ? '<span class="log-details-indicator material-symbols-outlined" style="font-size: 1.1rem; color: #8a9ab0; flex-shrink: 0; user-select: none;">unfold_more</span>' : ''}
+          </div>
           ${detailsHtml}
         </div>
       `;
@@ -128,6 +132,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const isAtBottom = logConsole.scrollHeight - logConsole.clientHeight <= logConsole.scrollTop + 80;
     
     logConsole.innerHTML = html;
+    
+    // Add event listeners for details expansion
+    logConsole.querySelectorAll('.log-item.has-details').forEach(item => {
+      const header = item.querySelector('.log-row-header');
+      const details = item.querySelector('.log-details-expanded');
+      const indicator = item.querySelector('.log-details-indicator');
+      
+      header.addEventListener('click', (e) => {
+        const isCollapsed = details.style.display === 'none';
+        details.style.display = isCollapsed ? 'block' : 'none';
+        if (indicator) {
+          indicator.textContent = isCollapsed ? 'unfold_less' : 'unfold_more';
+          indicator.style.color = isCollapsed ? 'var(--color-orange)' : '#8a9ab0';
+        }
+        item.style.background = isCollapsed ? 'rgba(255,255,255,0.02)' : 'transparent';
+      });
+      
+      // Simple hover effect for clickable rows
+      header.addEventListener('mouseenter', () => {
+        if (details.style.display === 'none') {
+          item.style.background = 'rgba(255,255,255,0.02)';
+        }
+      });
+      header.addEventListener('mouseleave', () => {
+        if (details.style.display === 'none') {
+          item.style.background = 'transparent';
+        }
+      });
+    });
     
     if (isAtBottom || logConsole.scrollTop === 0) {
       logConsole.scrollTop = logConsole.scrollHeight;
