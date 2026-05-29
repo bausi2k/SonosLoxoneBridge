@@ -2,6 +2,11 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.2] - 2026-05-29
+- **Längeres Synchronisations-Intervall & Polling-Sperrlogik**:
+  - Das periodische Update-Intervall für Loxone UDP-Daten wurde auf 30 Sekunden erhöht.
+  - Implementierung einer Selbstsperrlogik (`isPolling`), um konkurrierende Update-Zyklen bei Netzwerkverzögerungen oder langsamen Lautsprecher-Antworten auszuschließen.
+
 ## [0.5.1] - 2026-05-29
 - **Ausschluss von Bild-Proxy-Anfragen aus den Logs**:
   - `/api/art` Anfragen werden nicht mehr im System-Protokoll registriert, um ein Zuspielen/Spammen durch das automatische UI-Polling zu vermeiden.

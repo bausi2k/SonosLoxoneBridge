@@ -411,34 +411,48 @@ function getDevice(roomName) {
   return device;
 }
 
+let isPolling = false;
+
 /**
  * Periodically polls the speaker states and sends updates to Loxone.
  */
 async function pollStates() {
-  for (const device of devices) {
-    const norm = normalizeRoomName(device.Name);
-    const prev = { ...(deviceStates[norm] || {}) };
+  if (isPolling) {
+    console.warn('[Sonos] Polling update already in progress, skipping this tick.');
+    return;
+  }
+  
+  isPolling = true;
+  try {
+    for (const device of devices) {
+      const norm = normalizeRoomName(device.Name);
+      const prev = { ...(deviceStates[norm] || {}) };
 
-    await updateDeviceState(device);
+      await updateDeviceState(device);
 
-    const curr = deviceStates[norm] || {};
-    if (curr.isOffline) {
-      continue; // Skip triggering Loxone UDP outputs if the device is currently offline
-    }
+      const curr = deviceStates[norm] || {};
+      if (curr.isOffline) {
+        continue; // Skip triggering Loxone UDP outputs if the device is currently offline
+      }
 
-    if (prev.volume !== curr.volume && curr.volume !== undefined) {
-      sendVolumeStatus(device.Name, curr.volume);
+      if (prev.volume !== curr.volume && curr.volume !== undefined) {
+        sendVolumeStatus(device.Name, curr.volume);
+      }
+      if (prev.isPlaying !== curr.isPlaying && curr.isPlaying !== undefined) {
+        sendPlayStatus(device.Name, curr.isPlaying);
+      }
     }
-    if (prev.isPlaying !== curr.isPlaying && curr.isPlaying !== undefined) {
-      sendPlayStatus(device.Name, curr.isPlaying);
-    }
+  } catch (err) {
+    console.error('[Sonos] Error during speaker state polling:', err);
+  } finally {
+    isPolling = false;
   }
 }
 
 function startPolling() {
   if (pollInterval) clearInterval(pollInterval);
-  // Poll every 5 seconds
-  pollInterval = setInterval(pollStates, 5000);
+  // Poll every 30 seconds
+  pollInterval = setInterval(pollStates, 30000);
 }
 
 function stopPolling() {
