@@ -1848,10 +1848,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // Add favorites if available
       const favs = roomFavorites[roomName] || [];
       favs.forEach(fav => {
+        const title = typeof fav === 'string' ? fav : (fav.Title || fav.title);
+        if (!title) return;
         commands.push({
           method: 'GET',
-          path: `/${normRoom}/favorite/${encodeURIComponent(fav.title)}`,
-          desc: `Spielt den Sonos-Favoriten "${fav.title}" ab.`
+          path: `/${normRoom}/favorite/${encodeURIComponent(title)}`,
+          desc: `Spielt den Sonos-Favoriten "${title}" ab.`
         });
       });
 
