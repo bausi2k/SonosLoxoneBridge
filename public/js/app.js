@@ -114,10 +114,10 @@ document.addEventListener('DOMContentLoaded', () => {
       
       html += `
         <div class="log-item ${hasDetailsClass}" data-id="${log.id}" style="border-bottom: 1px solid rgba(255,255,255,0.04); padding: 0.35rem 0.5rem; transition: background 0.2s;">
-          <div class="log-row-header ${levelClass}" style="display: flex; align-items: center; gap: 0.75rem; cursor: ${log.details ? 'pointer' : 'default'}; min-height: 24px;">
+          <div class="log-row-header ${levelClass}" title="${escapeHtml(log.message)}" style="display: flex; align-items: center; gap: 0.75rem; cursor: ${log.details ? 'pointer' : 'default'}; min-height: 24px;">
             <span class="log-time" style="color: #8a9ab0; font-family: monospace; font-size: 0.8rem; flex-shrink: 0; letter-spacing: 0.05em;">[${timeStr}]</span>
             ${catBadge}
-            <span class="log-message-text" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; font-family: monospace; font-weight: 500;">${escapeHtml(log.message)}</span>
+            <span class="log-message-text" title="${escapeHtml(log.message)}" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; font-family: monospace; font-weight: 500;">${escapeHtml(log.message)}</span>
             ${log.details ? '<span class="log-details-indicator material-symbols-outlined" style="font-size: 1.1rem; color: #8a9ab0; flex-shrink: 0; user-select: none;">unfold_more</span>' : ''}
           </div>
           ${detailsHtml}

@@ -1404,8 +1404,6 @@ body {
   line-height: 1.5;
   color: #e5e5e0;
   margin: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
