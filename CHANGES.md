@@ -2,6 +2,10 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.1] - 2026-05-29
+- **Ausschluss von Bild-Proxy-Anfragen aus den Logs**:
+  - `/api/art` Anfragen werden nicht mehr im System-Protokoll registriert, um ein Zuspielen/Spammen durch das automatische UI-Polling zu vermeiden.
+
 ## [0.5.0] - 2026-05-29
 - **TuneIn S2-Support, Lautsprecher-Befehlsübersicht & Log-Verbesserungen**:
   - Unterstützung für das moderne S2-TuneIn-Streamingformat (`sid=303`) mit automatischem Fallback auf das klassische S1-Format (`sid=254`) bei Fehlern.

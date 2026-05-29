@@ -50,6 +50,7 @@ app.use((req, res, next) => {
     req.path.startsWith('/clips/') || 
     req.path === '/api/status' || 
     req.path === '/api/logs' ||
+    req.path === '/api/art' ||
     req.path === '/favicon.ico'
   ) {
     return next();
