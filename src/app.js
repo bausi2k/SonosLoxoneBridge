@@ -115,12 +115,12 @@ app.get('/:raum/volume/:wert', async (req, res) => {
   }
 });
 
-// GET /<raum>/favorite/<name>
-app.get('/:raum/favorite/:name', async (req, res) => {
-  const { raum, name } = req.params;
+// GET /<raum>/favorite/<name>/<volume> (volume is optional)
+app.get('/:raum/favorite/:name/:volume?', async (req, res) => {
+  const { raum, name, volume } = req.params;
   try {
-    const playedTitle = await playFavorite(raum, name);
-    res.json({ success: true, message: `Playing favorite "${playedTitle}" in room "${raum}"` });
+    const playedTitle = await playFavorite(raum, name, volume);
+    res.json({ success: true, message: `Playing favorite "${playedTitle}" in room "${raum}"${volume ? ` with volume ${volume}%` : ''}` });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
   }

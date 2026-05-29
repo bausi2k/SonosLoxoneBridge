@@ -58,7 +58,14 @@ describe('Express REST & Inbound API', () => {
       const res = await request(app).get('/livingroom/favorite/Favorite%20Radio');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(sonosMock.playFavorite).toHaveBeenCalledWith('livingroom', 'Favorite Radio');
+      expect(sonosMock.playFavorite).toHaveBeenCalledWith('livingroom', 'Favorite Radio', undefined);
+    });
+
+    test('GET /:raum/favorite/:name/:volume should play favorite with volume', async () => {
+      const res = await request(app).get('/livingroom/favorite/Favorite%20Radio/25');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(sonosMock.playFavorite).toHaveBeenCalledWith('livingroom', 'Favorite Radio', '25');
     });
 
     test('GET /:raum/say/:text/:volume should trigger TTS', async () => {

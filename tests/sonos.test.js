@@ -331,6 +331,13 @@ describe('Sonos Integration', () => {
     expect(sendPlayStatus).toHaveBeenCalledWith('Living Room', true);
   });
 
+  test('should play favorite with volume setting if volume parameter is provided', async () => {
+    const playedTitle = await playFavorite('wohnzimmer', 'Klassik Radio', 25);
+    expect(playedTitle).toBe('Klassik Radio');
+    expect(mockDevice.SetVolume).toHaveBeenCalledWith(25);
+    expect(sendVolumeStatus).toHaveBeenCalledWith('Living Room', 25);
+  });
+
   test('should pass track object with special characters to library for proper SOAP encoding', async () => {
     const playedTitle = await playFavorite('wohnzimmer', 'Superfly.fm 98.3 (Soul & R&B)');
     expect(playedTitle).toBe('Superfly.fm 98.3 (Soul & R&B)');

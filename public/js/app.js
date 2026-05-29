@@ -1855,7 +1855,7 @@ document.addEventListener('DOMContentLoaded', () => {
         commands.push({
           method: 'GET',
           path: `/${normRoom}/favorite/${encodeURIComponent(title)}`,
-          desc: `Spielt den Sonos-Favoriten "${title}" ab.`
+          desc: `Spielt den Sonos-Favoriten "${title}" ab (optionale Lautstärke kann angehängt werden, z. B. /25).`
         });
       });
 

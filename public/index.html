@@ -354,11 +354,15 @@
             <div class="api-endpoint-card">
               <div class="endpoint-header">
                 <span class="method">GET</span>
-                <span class="path">/:raum/favorite/:name</span>
+                <span class="path">/:raum/favorite/:name/:volume?</span>
               </div>
-              <p class="endpoint-desc">Spielt einen in der Sonos-App hinterlegten Favoriten (z. B. einen Radio-Sender oder eine Playlist) ab. Der Name wird case-insensitiv verglichen.</p>
-              <div class="endpoint-example">
-                <strong>Beispiel:</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/favorite/Radio%20Superfly</code>
+              <p class="endpoint-desc">Spielt einen in der Sonos-App hinterlegten Favoriten (z. B. einen Radio-Sender) ab. Die Lautstärke ist optional. Der Name wird case-insensitiv verglichen.</p>
+              <div class="endpoint-example font-small">
+                <strong>Beispiele:</strong>
+                <ul>
+                  <li>Favorit abspielen: <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/favorite/Radio%20Superfly</code></li>
+                  <li>Favorit mit 25% Lautstärke abspielen: <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/favorite/Radio%20Superfly/25</code></li>
+                </ul>
               </div>
             </div>
 

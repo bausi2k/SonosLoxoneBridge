@@ -2,6 +2,12 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.3] - 2026-05-29
+- **Favoriten-Wiedergabe mit absoluter Lautstärke**:
+  - Unterstützung für optionale absolute Lautstärke beim Abspielen von Favoriten (`/:raum/favorite/:name/:volume?`).
+  - Einstellen der Lautstärke vor dem Abspielen des Favoriten-Streams, um unerwünschtes anfängliches Aufbrüllen zu vermeiden.
+  - Dokumentation und dynamischer Befehls-Generator im UI um den Lautstärkeparameter erweitert.
+
 ## [0.5.2] - 2026-05-29
 - **Längeres Synchronisations-Intervall & Polling-Sperrlogik**:
   - Das periodische Update-Intervall für Loxone UDP-Daten wurde auf 30 Sekunden erhöht.

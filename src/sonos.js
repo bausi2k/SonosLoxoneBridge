@@ -808,11 +808,20 @@ async function getFavorites(roomName) {
 /**
  * Plays a favorite by name.
  */
-async function playFavorite(roomName, favoriteName) {
-  console.log(`[Sonos Debug] playFavorite called for room "${roomName}", favorite: "${favoriteName}"`);
+async function playFavorite(roomName, favoriteName, volumeVal) {
+  console.log(`[Sonos Debug] playFavorite called for room "${roomName}", favorite: "${favoriteName}", volumeVal: "${volumeVal}"`);
   try {
     const device = getDevice(roomName);
     console.log(`[Sonos Debug] Found device: ${device.Name}`);
+    
+    if (volumeVal !== undefined && volumeVal !== null) {
+      const vol = parseInt(volumeVal, 10);
+      if (!isNaN(vol)) {
+        console.log(`[Sonos Debug] Setting volume to ${vol}% before playing favorite`);
+        await device.SetVolume(vol);
+        sendVolumeStatus(device.Name, vol);
+      }
+    }
     
     const favorites = await getFavorites(roomName);
     console.log(`[Sonos Debug] Discovered favorites:`, favorites.map(f => f.Title));
