@@ -317,9 +317,11 @@ document.addEventListener('DOMContentLoaded', () => {
         bridgeIpDisplay.textContent = data.bridgeIp;
         currentRooms = data.rooms;
 
-        const versionDisplay = document.getElementById('version-display');
-        if (versionDisplay && data.version) {
-          versionDisplay.textContent = `v${data.version}`;
+        const versionDisplays = document.querySelectorAll('#version-display, .footer-version-display');
+        if (data.version) {
+          versionDisplays.forEach(el => {
+            el.textContent = `v${data.version}`;
+          });
         }
 
         if (isInitial && data.settings) {

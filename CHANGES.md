@@ -2,10 +2,12 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
-## [0.4.7] - 2026-05-28
-- **TuneIn S2 Support & Lautsprecher-spezifische HTTP-Befehle**:
+## [0.5.0] - 2026-05-29
+- **TuneIn S2-Support, Lautsprecher-Befehlsübersicht & Log-Verbesserungen**:
   - Unterstützung für das moderne S2-TuneIn-Streamingformat (`sid=303`) mit automatischem Fallback auf das klassische S1-Format (`sid=254`) bei Fehlern.
   - Dynamischer Befehls-Generator im Tab "Anleitung": Ermöglicht die Auswahl eines aktiven Lautsprechers, um fertige, kopierbare und klickbare HTTP-URLs inklusive Namen und individueller Sonos-Favoriten anzuzeigen.
+  - Optimierung des Log-Fensters: Störende Leerzeilen wurden durch den Wechsel auf ein Div-Element und Entfernen von `pre-wrap` entfernt.
+  - Native Hover-Tooltips für Log-Zeilen hinzugefügt, um die ungekürzten Textmeldungen bei Mouseover bequem anzuzeigen.
 
 ## [0.4.6] - 2026-05-28
 - **Kompaktes Log-Layout (Single-Line)**:
