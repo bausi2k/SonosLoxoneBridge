@@ -692,4 +692,26 @@ describe('Sonos Integration', () => {
       expect(lr.volume).toBe(30);
     });
   });
+
+  describe('Parallel Polling and Pause Error Handling', () => {
+    test('pauseRoom should fallback to Stop on UPnPError 701 and notify Loxone', async () => {
+      const dev = getDevice('Living Room');
+      
+      // Mock Pause to throw UPnPError 701
+      const upnpError = new Error('Sonos error on Pause UPnPError 701 (Transition not available)');
+      upnpError.UpnpErrorCode = 701;
+      mockDevice.Pause.mockRejectedValueOnce(upnpError);
+      
+      // Mock Stop to succeed
+      mockDevice.Stop = jest.fn().mockResolvedValueOnce(true);
+
+      const { pauseRoom } = require('../src/sonos');
+      await pauseRoom('Living Room');
+
+      expect(mockDevice.Pause).toHaveBeenCalled();
+      expect(mockDevice.Stop).toHaveBeenCalled();
+      expect(sendPlayStatus).toHaveBeenCalledWith('Living Room', false);
+    });
+  });
 });
+

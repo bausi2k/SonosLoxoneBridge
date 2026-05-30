@@ -413,9 +413,6 @@ function getDevice(roomName) {
 
 let isPolling = false;
 
-/**
- * Periodically polls the speaker states and sends updates to Loxone.
- */
 async function pollStates() {
   if (isPolling) {
     console.warn('[Sonos] Polling update already in progress, skipping this tick.');
@@ -424,15 +421,19 @@ async function pollStates() {
   
   isPolling = true;
   try {
-    for (const device of devices) {
+    const pollPromises = devices.map(async (device) => {
       const norm = normalizeRoomName(device.Name);
       const prev = { ...(deviceStates[norm] || {}) };
 
-      await updateDeviceState(device);
+      try {
+        await updateDeviceState(device);
+      } catch (err) {
+        console.error(`[Sonos] Error updating state for "${device.Name}":`, err.message);
+      }
 
       const curr = deviceStates[norm] || {};
       if (curr.isOffline) {
-        continue; // Skip triggering Loxone UDP outputs if the device is currently offline
+        return; // Skip triggering Loxone UDP outputs if the device is currently offline
       }
 
       if (prev.volume !== curr.volume && curr.volume !== undefined) {
@@ -441,7 +442,9 @@ async function pollStates() {
       if (prev.isPlaying !== curr.isPlaying && curr.isPlaying !== undefined) {
         sendPlayStatus(device.Name, curr.isPlaying);
       }
-    }
+    });
+
+    await Promise.allSettled(pollPromises);
   } catch (err) {
     console.error('[Sonos] Error during speaker state polling:', err);
   } finally {
@@ -536,6 +539,24 @@ async function pauseRoom(roomName) {
     if (deviceStates[norm]) deviceStates[norm].isPlaying = false;
     sendPlayStatus(device.Name, false);
   } catch (err) {
+    if (err.UpnpErrorCode === 701 || (err.message && err.message.includes('701'))) {
+      console.log(`[Sonos Debug] Pause command returned 701 (Transition not available) for "${roomName}". Trying Stop command as fallback...`);
+      try {
+        const device = getDevice(roomName);
+        await device.Stop();
+        console.log(`[Sonos Debug] Stop fallback successful for "${device.Name}".`);
+      } catch (stopErr) {
+        console.warn(`[Sonos Debug] Stop fallback also failed or not available for "${roomName}":`, stopErr.message);
+      }
+      
+      // Even if Stop fails or isn't applicable, consider playback stopped
+      const device = getDevice(roomName);
+      const norm = normalizeRoomName(device.Name);
+      if (deviceStates[norm]) deviceStates[norm].isPlaying = false;
+      sendPlayStatus(device.Name, false);
+      return;
+    }
+
     console.error(`[Sonos Debug] Error in pauseRoom for room "${roomName}":`, formatError(err));
     throw err;
   }
