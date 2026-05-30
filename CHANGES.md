@@ -2,6 +2,12 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.4] - 2026-05-30
+- **Paralleles Polling, Pause-Robustheit & CSS-Optimierungen**:
+  - Umstellung des Hintergrund-Pollings auf `Promise.allSettled()`, damit Timeouts von Offline-Geräten nicht das gesamte Polling blockieren.
+  - Fehlerbehandlung bei `/pause` für bereits gestoppte oder Live-Stream abspielende Lautsprecher (Abfangen von UPnPError `701` mit automatischem Fallback auf `Stop`).
+  - Webkit CSS-Verbesserungen für Safari/Chrome: Hardware-Beschleunigung für Glassmorphism-Karten, flüssigere Schieberegler-Aktualisierungen und einheitliche Scrollbars.
+
 ## [0.5.3] - 2026-05-29
 - **Favoriten-Wiedergabe mit absoluter Lautstärke**:
   - Unterstützung für optionale absolute Lautstärke beim Abspielen von Favoriten (`/:raum/favorite/:name/:volume?`).
