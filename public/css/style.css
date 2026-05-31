@@ -404,7 +404,7 @@ body {
 
 .speakers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: 1.75rem;
 }
 
@@ -413,6 +413,8 @@ body {
   flex-direction: column;
   gap: 1.75rem;
   position: relative;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* Card Header Styles */
@@ -786,6 +788,8 @@ body {
   outline: none;
   transition: background-color 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 0;
+  width: 100%;
 }
 
 .dark-mode .volume-slider {
@@ -823,6 +827,9 @@ body {
   border-top: 1px solid var(--border-color);
   padding-top: 1.25rem;
   margin-top: 0.25rem;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .favorites-select-wrapper {
@@ -1665,7 +1672,7 @@ body {
 
   /* Single-column stack on mobile */
   .speakers-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
   }
 
