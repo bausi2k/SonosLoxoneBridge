@@ -2,6 +2,11 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.5] - 2026-05-31
+- **Bugfix für mobile Layout-Verschiebung (iOS/WebKit)**:
+  - Behebung von horizontalem Überlauf (Scrollview) auf dem iPhone durch das Hinzufügen von Layout-Einschränkungen (`min-width: 0`, `box-sizing: border-box`) für die Lautsprecher-Karten und deren Footer.
+  - Dynamische Anpassung des Lautstärke-Schiebereglers und des Spalten-Grids auf kleinen Viewports mittels modernem CSS (`minmax(min(100%, 320px), 1fr)`).
+
 ## [0.5.4] - 2026-05-30
 - **Paralleles Polling, Pause-Robustheit & CSS-Optimierungen**:
   - Umstellung des Hintergrund-Pollings auf `Promise.allSettled()`, damit Timeouts von Offline-Geräten nicht das gesamte Polling blockieren.
