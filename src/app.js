@@ -85,8 +85,13 @@ if (process.env.NODE_ENV !== 'test') {
 // GET /<raum>/play
 app.get('/:raum/play', async (req, res) => {
   const { raum } = req.params;
+  const priority = req.query.prio === 'true' || req.query.prio === '1';
   try {
-    await playRoom(raum);
+    if (priority) {
+      await playRoom(raum, true);
+    } else {
+      await playRoom(raum);
+    }
     res.json({ success: true, message: `Playback started in room "${raum}"` });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
@@ -107,8 +112,9 @@ app.get('/:raum/pause', async (req, res) => {
 // GET /<raum>/volume/<wert>
 app.get('/:raum/volume/:wert', async (req, res) => {
   const { raum, wert } = req.params;
+  const priority = req.query.prio === 'true' || req.query.prio === '1';
   try {
-    const targetVolume = await setRoomVolume(raum, wert);
+    const targetVolume = priority ? await setRoomVolume(raum, wert, true) : await setRoomVolume(raum, wert);
     res.json({ success: true, message: `Volume in room "${raum}" set to ${targetVolume}` });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
@@ -118,8 +124,9 @@ app.get('/:raum/volume/:wert', async (req, res) => {
 // GET /<raum>/favorite/<name>/<volume> (volume is optional)
 app.get('/:raum/favorite/:name/:volume?', async (req, res) => {
   const { raum, name, volume } = req.params;
+  const priority = req.query.prio === 'true' || req.query.prio === '1';
   try {
-    const playedTitle = await playFavorite(raum, name, volume);
+    const playedTitle = priority ? await playFavorite(raum, name, volume, true) : await playFavorite(raum, name, volume);
     res.json({ success: true, message: `Playing favorite "${playedTitle}" in room "${raum}"${volume ? ` with volume ${volume}%` : ''}` });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
@@ -129,8 +136,9 @@ app.get('/:raum/favorite/:name/:volume?', async (req, res) => {
 // GET /<raum>/say/<text>/<volume> (volume is optional)
 app.get('/:raum/say/:text/:volume?', async (req, res) => {
   const { raum, text, volume } = req.params;
+  const priority = req.query.prio === 'true' || req.query.prio === '1';
   try {
-    const url = await sayRoom(raum, text, volume);
+    const url = priority ? await sayRoom(raum, text, volume, true) : await sayRoom(raum, text, volume);
     res.json({ success: true, message: `TTS announcement triggered in room "${raum}"`, url });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
@@ -140,8 +148,13 @@ app.get('/:raum/say/:text/:volume?', async (req, res) => {
 // GET /<raum>/tunein/play/<stationId>
 app.get('/:raum/tunein/play/:stationId', async (req, res) => {
   const { raum, stationId } = req.params;
+  const priority = req.query.prio === 'true' || req.query.prio === '1';
   try {
-    await playTuneIn(raum, stationId);
+    if (priority) {
+      await playTuneIn(raum, stationId, true);
+    } else {
+      await playTuneIn(raum, stationId);
+    }
     res.json({ success: true, message: `Playing TuneIn station ${stationId} in room "${raum}"` });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
@@ -151,8 +164,13 @@ app.get('/:raum/tunein/play/:stationId', async (req, res) => {
 // GET /<raum>/leave
 app.get('/:raum/leave', async (req, res) => {
   const { raum } = req.params;
+  const priority = req.query.prio === 'true' || req.query.prio === '1';
   try {
-    await leaveGroup(raum);
+    if (priority) {
+      await leaveGroup(raum, true);
+    } else {
+      await leaveGroup(raum);
+    }
     res.json({ success: true, message: `Room "${raum}" left group` });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
@@ -162,6 +180,7 @@ app.get('/:raum/leave', async (req, res) => {
 // GET /<raum>/playpause
 app.get('/:raum/playpause', async (req, res) => {
   const { raum } = req.params;
+  const priority = req.query.prio === 'true' || req.query.prio === '1';
   try {
     const states = getRoomStates();
     const roomState = states.find(r => r.name.toLowerCase() === raum.toLowerCase());
@@ -172,7 +191,11 @@ app.get('/:raum/playpause', async (req, res) => {
       await pauseRoom(raum);
       res.json({ success: true, message: `Paused in room "${raum}"` });
     } else {
-      await playRoom(raum);
+      if (priority) {
+        await playRoom(raum, true);
+      } else {
+        await playRoom(raum);
+      }
       res.json({ success: true, message: `Started playing in room "${raum}"` });
     }
   } catch (err) {
@@ -183,8 +206,13 @@ app.get('/:raum/playpause', async (req, res) => {
 // GET /<raum>/clip/<file>/<volume> (volume is optional)
 app.get('/:raum/clip/:file/:volume?', async (req, res) => {
   const { raum, file, volume } = req.params;
+  const priority = req.query.prio === 'true' || req.query.prio === '1';
   try {
-    await playClip(raum, file, volume);
+    if (priority) {
+      await playClip(raum, file, volume, true);
+    } else {
+      await playClip(raum, file, volume);
+    }
     res.json({ success: true, message: `Playing audio clip "${file}" in room "${raum}"` });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
@@ -302,7 +330,8 @@ app.get('/api/favorites/:room', async (req, res) => {
 
 // POST /api/control
 app.post('/api/control', async (req, res) => {
-  const { room, action, value } = req.body;
+  const { room, action, value, priority, prio } = req.body;
+  const isPrio = priority === true || prio === true || priority === 'true' || prio === 'true' || priority === 1 || prio === 1;
 
   if (!room || !action) {
     return res.status(400).json({ success: false, error: 'Room and action are required' });
@@ -312,7 +341,11 @@ app.post('/api/control', async (req, res) => {
     let message = '';
     switch (action) {
       case 'play':
-        await playRoom(room);
+        if (isPrio) {
+          await playRoom(room, true);
+        } else {
+          await playRoom(room);
+        }
         message = `Started playback in "${room}"`;
         break;
       case 'pause':
@@ -320,31 +353,51 @@ app.post('/api/control', async (req, res) => {
         message = `Paused playback in "${room}"`;
         break;
       case 'volume':
-        const vol = await setRoomVolume(room, value);
+        const vol = isPrio ? await setRoomVolume(room, value, true) : await setRoomVolume(room, value);
         message = `Set volume in "${room}" to ${vol}`;
         break;
       case 'favorite':
-        const fav = await playFavorite(room, value);
+        const fav = isPrio ? await playFavorite(room, value, undefined, true) : await playFavorite(room, value);
         message = `Playing favorite "${fav}" in "${room}"`;
         break;
       case 'say':
         if (typeof value === 'object' && value !== null) {
-          await sayRoom(room, value.text, value.volume);
+          if (isPrio) {
+            await sayRoom(room, value.text, value.volume, true);
+          } else {
+            await sayRoom(room, value.text, value.volume);
+          }
         } else {
-          await sayRoom(room, value);
+          if (isPrio) {
+            await sayRoom(room, value, undefined, true);
+          } else {
+            await sayRoom(room, value);
+          }
         }
         message = `Triggered announcement in "${room}"`;
         break;
       case 'next':
-        await nextTrack(room);
+        if (isPrio) {
+          await nextTrack(room, true);
+        } else {
+          await nextTrack(room);
+        }
         message = `Skipped to next track in "${room}"`;
         break;
       case 'previous':
-        await previousTrack(room);
+        if (isPrio) {
+          await previousTrack(room, true);
+        } else {
+          await previousTrack(room);
+        }
         message = `Skipped to previous track in "${room}"`;
         break;
       case 'playmode':
-        await setRoomPlayMode(room, value);
+        if (isPrio) {
+          await setRoomPlayMode(room, value, true);
+        } else {
+          await setRoomPlayMode(room, value);
+        }
         message = `Set playmode in "${room}" to ${value}`;
         break;
       default:
