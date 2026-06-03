@@ -1,13 +1,10 @@
-Commit Reference: 915f9aad13307128f505f4dc99103271cd17f172
+Commit Reference: 8de5c9ec8427a011263ecfdb45d9021b80d3bf8b
 Date: 2026-06-03
-Version: 0.5.6
-Branch: feature/priority-queue
+Version: 0.5.7
+Branch: bugfix/dropdown-carrot-fix
 
 Changes:
-- Created src/queue.js containing the CommandQueue class supporting sequential execution, priority queueing (unshift), and queue clearing.
-- Integrated CommandQueue into src/sonos.js, wrapping control functions for all rooms.
-- Created tests/queue.test.js containing unit tests for the command queue.
-- Updated src/app.js to parse query and body priority flags, forwarding them conditionally to preserve Jest mock matching.
-- Updated tests/app.test.js with new integration tests asserting priority flag routing on GET and POST.
-- Added comprehensive documentation for the Priority Queue feature in public/index.html.
-- Bumped version to 0.5.6 in package.json and updated CHANGES.md.
+- Modified public/css/style.css: Changed background shorthand property in dark-mode form-group select and textarea elements to background-color.
+- Modified public/css/style.css: Changed background shorthand property in dark-mode form-group select:focus, input:focus, and textarea:focus states to background-color.
+- Bumped version to 0.5.7 in package.json.
+- Documented bugfix in CHANGES.md.
