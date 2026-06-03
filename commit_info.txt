@@ -1,10 +1,10 @@
-Commit Reference: 8de5c9ec8427a011263ecfdb45d9021b80d3bf8b
+Commit Reference: 67dbbe214bfade456e78ec92876371c3b7ef6900
 Date: 2026-06-03
-Version: 0.5.7
-Branch: bugfix/dropdown-carrot-fix
+Version: 0.5.8
+Branch: bugfix/dynamic-favorites-docs
 
 Changes:
-- Modified public/css/style.css: Changed background shorthand property in dark-mode form-group select and textarea elements to background-color.
-- Modified public/css/style.css: Changed background shorthand property in dark-mode form-group select:focus, input:focus, and textarea:focus states to background-color.
-- Bumped version to 0.5.7 in package.json.
-- Documented bugfix in CHANGES.md.
+- Modified public/index.html: Replaced static favorites endpoint examples with a dynamic list container placeholder (`favorites-doc-list`).
+- Modified public/js/app.js: Added `updateFavoritesDocumentation()` function to automatically populate and render copy-pasteable endpoint URLs for all Sonos favorites loaded at runtime.
+- Bumped version to 0.5.8 in package.json.
+- Updated CHANGES.md.

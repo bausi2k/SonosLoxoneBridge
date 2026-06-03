@@ -479,6 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         roomFavorites[roomName] = data.favorites || [];
         updateFavoritesDropdown(roomName);
+        updateFavoritesDocumentation();
         
         // Refresh manual commands list if the speaker is currently selected
         const manualSelect = document.getElementById('manual-speaker-select');
@@ -491,6 +492,69 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.warn(`Could not load favorites for room "${roomName}":`, err);
     }
+  }
+
+  // Update the dynamic favorites documentation block in the Manual tab
+  function updateFavoritesDocumentation() {
+    const listContainer = document.getElementById('favorites-doc-list');
+    if (!listContainer) return;
+
+    // Find any room that has loaded favorites
+    let favoritesList = [];
+    for (const rName in roomFavorites) {
+      if (roomFavorites[rName] && roomFavorites[rName].length > 0) {
+        favoritesList = roomFavorites[rName];
+        break;
+      }
+    }
+
+    if (favoritesList.length === 0) {
+      listContainer.innerHTML = '<li><em>Noch keine Favoriten vom Sonos-System geladen.</em></li>';
+      return;
+    }
+
+    const bridgePort = (currentSettings && currentSettings.port) || 8888;
+    const bridgeIp = (currentStatus && currentStatus.bridgeIp) || '127.0.0.1';
+    const baseUrl = `http://${bridgeIp}:${bridgePort}`;
+
+    listContainer.innerHTML = '';
+    
+    // Sort favorites alphabetically
+    const sortedFavs = [...favoritesList].sort((a, b) => {
+      const titleA = (typeof a === 'string' ? a : (a.Title || a.title || '')).toLowerCase();
+      const titleB = (typeof b === 'string' ? b : (b.Title || b.title || '')).toLowerCase();
+      return titleA.localeCompare(titleB);
+    });
+
+    sortedFavs.forEach(fav => {
+      const title = typeof fav === 'string' ? fav : (fav.Title || fav.title);
+      if (!title) return;
+
+      const encodedTitle = encodeURIComponent(title);
+      const sampleUrl = `${baseUrl}/wohnzimmer/favorite/${encodedTitle}`;
+      const sampleUrlVol = `${baseUrl}/wohnzimmer/favorite/${encodedTitle}/25`;
+
+      const li = document.createElement('li');
+      li.style.marginBottom = '12px';
+      li.style.padding = '8px';
+      li.style.background = 'rgba(255, 255, 255, 0.02)';
+      li.style.borderRadius = '6px';
+      li.style.border = '1px solid rgba(255, 255, 255, 0.05)';
+      li.innerHTML = `
+        <div style="font-weight: 600; color: var(--text-color); margin-bottom: 6px;">${escapeHtml(title)}</div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <span style="color: var(--text-muted); font-size: 0.8rem;">Wiedergabe:</span>
+            <code class="dynamic-url-click" style="cursor: pointer; background: rgba(255,165,0,0.08); color: var(--color-orange); padding: 3px 8px; border-radius: 4px; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-width: 80%; border: 1px solid rgba(255,165,0,0.15); transition: all 0.2s;" title="Kopieren" onclick="navigator.clipboard.writeText(this.textContent); showToast('In Zwischenablage kopiert!')">${sampleUrl}</code>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <span style="color: var(--text-muted); font-size: 0.8rem;">Mit Lautstärke (25%):</span>
+            <code class="dynamic-url-click" style="cursor: pointer; background: rgba(255,165,0,0.08); color: var(--color-orange); padding: 3px 8px; border-radius: 4px; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-width: 80%; border: 1px solid rgba(255,165,0,0.15); transition: all 0.2s;" title="Kopieren" onclick="navigator.clipboard.writeText(this.textContent); showToast('In Zwischenablage kopiert!')">${sampleUrlVol}</code>
+          </div>
+        </div>
+      `;
+      listContainer.appendChild(li);
+    });
   }
 
   // Helper to format now playing track details
