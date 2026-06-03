@@ -2,6 +2,11 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.8] - 2026-06-03
+- **Dynamische Dokumentation für Sonos-Favoriten**:
+  - Dynamisches Auslesen und Anzeigen aller Sonos-Systemfavoriten direkt innerhalb der GET-Favoritendokumentation im "Anleitung"-Tab.
+  - Bereitstellung von direkt klickbaren und kopierbaren HTTP-GET-Links mit den exakten, URL-kodierten Namen deiner Favoriten (inklusive Sonderzeichen wie Klammern, Umlauten und des Grad-Zeichens `°`).
+
 ## [0.5.7] - 2026-06-03
 - **Bugfix für Dropdown-Chevrons im Darkmode**:
   - CSS-Fehler behoben, bei dem das Dropdown-Pfeilsymbol (Carrot) im Darkmode sich über die gesamte Breite des Select-Feldes wiederholte.

@@ -357,11 +357,18 @@
                 <span class="path">/:raum/favorite/:name/:volume?</span>
               </div>
               <p class="endpoint-desc">Spielt einen in der Sonos-App hinterlegten Favoriten (z. B. einen Radio-Sender) ab. Die Lautstärke ist optional. Der Name wird case-insensitiv verglichen.</p>
-              <div class="endpoint-example font-small">
+              <div class="endpoint-example font-small" style="margin-bottom: 12px;">
                 <strong>Beispiele:</strong>
                 <ul>
-                  <li>Favorit abspielen: <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/favorite/Radio%20Superfly</code></li>
-                  <li>Favorit mit 25% Lautstärke abspielen: <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/favorite/Radio%20Superfly/25</code></li>
+                  <li>Favorit abspielen: <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/favorite/DeinFavoritName</code></li>
+                  <li>Favorit mit 25% Lautstärke abspielen: <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/favorite/DeinFavoritName/25</code></li>
+                </ul>
+              </div>
+              <div class="endpoint-example font-small" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 12px;">
+                <strong>Dynamisch geladene Favoriten aus deinem Sonos-System:</strong>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px; margin-bottom: 8px;">Klicke auf eine URL, um sie in die Zwischenablage zu kopieren:</p>
+                <ul id="favorites-doc-list" style="list-style-type: none; padding-left: 0; margin-bottom: 0;">
+                  <li><em>Lade Favoriten vom Sonos-System...</em></li>
                 </ul>
               </div>
             </div>
