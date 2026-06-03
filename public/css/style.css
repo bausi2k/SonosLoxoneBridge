@@ -1028,7 +1028,7 @@ body {
 .dark-mode .form-group input,
 .dark-mode .form-group select,
 .dark-mode .form-group textarea {
-  background: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .form-group select {
@@ -1056,7 +1056,7 @@ body {
 .dark-mode .form-group input:focus,
 .dark-mode .form-group select:focus,
 .dark-mode .form-group textarea:focus {
-  background: rgba(0, 0, 0, 0.35);
+  background-color: rgba(0, 0, 0, 0.35);
 }
 
 .form-group textarea {

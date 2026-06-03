@@ -2,6 +2,11 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.7] - 2026-06-03
+- **Bugfix für Dropdown-Chevrons im Darkmode**:
+  - CSS-Fehler behoben, bei dem das Dropdown-Pfeilsymbol (Carrot) im Darkmode sich über die gesamte Breite des Select-Feldes wiederholte.
+  - Umstellung des CSS-Shorthands `background` auf `background-color` bei `.dark-mode .form-group select` und dessen `:focus`-Zustand, um das Zurücksetzen von SVG-Hintergrundeigenschaften (`background-repeat`, `background-position`) zu verhindern.
+
 ## [0.5.6] - 2026-06-03
 - **Priorisierte Befehlswarteschlange (Priority Queue)**:
   - Implementierung einer raumweisen sequentiellen Befehlswarteschlange zur Vermeidung von UPnP-Koncurrency-Konflikten bei hochfrequenten Aufrufen (z. B. schnellen TTS-Sprachansagen).
