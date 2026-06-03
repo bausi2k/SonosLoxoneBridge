@@ -229,6 +229,36 @@ describe('Express REST & Inbound API', () => {
         expect(res.body.details.message).toBe('SOAP Error: Transition not available');
         expect(res.body.details.stack).toBeDefined();
       });
+
+      describe('Priority Flag support', () => {
+        test('should support priority in POST play', async () => {
+          const res = await request(app)
+            .post('/api/control')
+            .send({ room: 'livingroom', action: 'play', priority: true });
+          expect(res.status).toBe(200);
+          expect(sonosMock.playRoom).toHaveBeenCalledWith('livingroom', true);
+        });
+
+        test('should support priority in POST volume', async () => {
+          const res = await request(app)
+            .post('/api/control')
+            .send({ room: 'livingroom', action: 'volume', value: 50, prio: 1 });
+          expect(res.status).toBe(200);
+          expect(sonosMock.setRoomVolume).toHaveBeenCalledWith('livingroom', 50, true);
+        });
+
+        test('should support priority in GET play', async () => {
+          const res = await request(app).get('/livingroom/play?prio=true');
+          expect(res.status).toBe(200);
+          expect(sonosMock.playRoom).toHaveBeenCalledWith('livingroom', true);
+        });
+
+        test('should support priority in GET say', async () => {
+          const res = await request(app).get('/livingroom/say/Hello/40?prio=1');
+          expect(res.status).toBe(200);
+          expect(sonosMock.sayRoom).toHaveBeenCalledWith('livingroom', 'Hello', '40', true);
+        });
+      });
     });
 
     test('GET /api/loxone-export should trigger XML download', async () => {

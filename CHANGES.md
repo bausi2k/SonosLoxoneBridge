@@ -2,6 +2,13 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.6] - 2026-06-03
+- **Priorisierte Befehlswarteschlange (Priority Queue)**:
+  - Implementierung einer raumweisen sequentiellen Befehlswarteschlange zur Vermeidung von UPnP-Koncurrency-Konflikten bei hochfrequenten Aufrufen (z. B. schnellen TTS-Sprachansagen).
+  - Unterstützung für Priorisierung über den URL-Parameter `?prio=true` / `?prio=1` bei HTTP GET und `"priority": true` / `"prio": true` bei HTTP POST (Befehl reiht sich vorne in die Warteschlange ein).
+  - Sofortiger Abbruch und Bereinigung aller ausstehenden Befehle bei Eingang eines `pause`-Befehls.
+  - Erweiterung der API-Dokumentation im Web-UI zur Erläuterung der Warteschlange und der Priorisierung.
+
 ## [0.5.5] - 2026-05-31
 - **Bugfix für mobile Layout-Verschiebung (iOS/WebKit)**:
   - Behebung von horizontalem Überlauf (Scrollview) auf dem iPhone durch das Hinzufügen von Layout-Einschränkungen (`min-width: 0`, `box-sizing: border-box`) für die Lautsprecher-Karten und deren Footer.

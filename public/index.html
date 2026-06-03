@@ -422,6 +422,42 @@
             </div>
           </div>
         </div>
+        <div class="glass-card manual-card" style="margin-top: 2rem;">
+          <h3>Priorisierte Befehlswarteschlange (Priority Queue)</h3>
+          <p class="manual-intro">Um UPnP-Konflikte bei schnell aufeinanderfolgenden Befehlen (z. B. mehreren TTS-Sprachansagen) zu vermeiden, verarbeitet die Bridge alle Aktionen für jeden Raum nacheinander (sequentiell) über eine Warteschlange.</p>
+          <div class="api-endpoints">
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET</span>
+                <span class="path">...?prio=true</span>
+              </div>
+              <p class="endpoint-desc">Durch Anhängen des Parameters <code>?prio=true</code> oder <code>?prio=1</code> an eine beliebige HTTP-GET-URL wird der Befehl an die erste Stelle der Warteschlange gesetzt (wird als nächstes ausgeführt).</p>
+              <div class="endpoint-example font-small">
+                <strong>Beispiel:</strong> <code>http://<span class="ex-ip">127.0.0.1</span>:<span class="ex-port">8888</span>/wohnzimmer/say/Wichtige%20Meldung/40?prio=true</code>
+              </div>
+            </div>
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">GET / POST</span>
+                <span class="path">Sofortiger Abbruch bei Pause</span>
+              </div>
+              <p class="endpoint-desc">Ein <code>pause</code>-Befehl bricht die Warteschlange für den Raum sofort ab, löscht alle ausstehenden Befehle und pausiert den Lautsprecher unverzüglich.</p>
+            </div>
+            <div class="api-endpoint-card">
+              <div class="endpoint-header">
+                <span class="method">POST</span>
+                <span class="path">/api/control</span>
+              </div>
+              <p class="endpoint-desc">Bei Steuerung über die POST-Schnittstelle kann die Priorisierung durch das Hinzufügen von <code>"priority": true</code> oder <code>"prio": true</code> im JSON-Payload angefordert werden.</p>
+              <pre style="background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 6px; color: #a9ffb2; font-size: 0.85rem; overflow-x: auto; font-family: monospace; border: 1px solid rgba(255, 255, 255, 0.05); margin-top: 8px;">{
+  "room": "wohnzimmer",
+  "action": "say",
+  "value": "Wichtige Meldung",
+  "priority": true
+}</pre>
+            </div>
+          </div>
+        </div>
 
         <div class="glass-card manual-card" style="margin-top: 2rem;">
           <h3>Lautsprecher-spezifische HTTP-Befehle</h3>

@@ -4,6 +4,7 @@ const { SonosManager, SonosDevice, MetaDataHelper } = require('@svrooij/sonos');
 const { getSettings } = require('./settings');
 const { normalizeRoomName, sendPlayStatus, sendVolumeStatus } = require('./loxone');
 const { generateTts } = require('./tts');
+const CommandQueue = require('./queue');
 
 let devices = [];
 let manager = null;
@@ -1255,19 +1256,76 @@ async function applyPreset(presetInput) {
   return true;
 }
 
+// Pro-room Queue Wrappers
+const roomQueues = {};
+
+function getRoomQueue(roomName) {
+  const norm = normalizeRoomName(roomName);
+  if (!roomQueues[norm]) {
+    roomQueues[norm] = new CommandQueue();
+  }
+  return roomQueues[norm];
+}
+
+async function queuedPlayRoom(roomName, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => playRoom(roomName), priority);
+}
+
+async function queuedPauseRoom(roomName) {
+  // Clear any pending commands in the queue for this room immediately
+  getRoomQueue(roomName).clear();
+  return pauseRoom(roomName);
+}
+
+async function queuedSetRoomVolume(roomName, volumeVal, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => setRoomVolume(roomName, volumeVal), priority);
+}
+
+async function queuedNextTrack(roomName, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => nextTrack(roomName), priority);
+}
+
+async function queuedPreviousTrack(roomName, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => previousTrack(roomName), priority);
+}
+
+async function queuedSetRoomPlayMode(roomName, playMode, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => setRoomPlayMode(roomName, playMode), priority);
+}
+
+async function queuedPlayFavorite(roomName, favoriteName, volumeVal, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => playFavorite(roomName, favoriteName, volumeVal), priority);
+}
+
+async function queuedSayRoom(roomName, text, volumeVal, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => sayRoom(roomName, text, volumeVal), priority);
+}
+
+async function queuedPlayTuneIn(roomName, stationId, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => playTuneIn(roomName, stationId), priority);
+}
+
+async function queuedLeaveGroup(roomName, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => leaveGroup(roomName), priority);
+}
+
+async function queuedPlayClip(roomName, filename, volumeVal, priority = false) {
+  return getRoomQueue(roomName).enqueue(() => playClip(roomName, filename, volumeVal), priority);
+}
+
 module.exports = {
   initializeSonos,
   getLocalIp,
   getDevice,
-  playRoom,
-  pauseRoom,
-  setRoomVolume,
-  nextTrack,
-  previousTrack,
-  setRoomPlayMode,
+  playRoom: queuedPlayRoom,
+  pauseRoom: queuedPauseRoom,
+  setRoomVolume: queuedSetRoomVolume,
+  nextTrack: queuedNextTrack,
+  previousTrack: queuedPreviousTrack,
+  setRoomPlayMode: queuedSetRoomPlayMode,
   getFavorites,
-  playFavorite,
-  sayRoom,
+  playFavorite: queuedPlayFavorite,
+  sayRoom: queuedSayRoom,
   getActiveRooms,
   getRoomStates,
   stopPolling,
@@ -1276,13 +1334,14 @@ module.exports = {
   fetchBatteryStatus,
   parseBatteryXml,
   updateDeviceBatteryStatus,
-  playTuneIn,
-  leaveGroup,
-  playClip,
+  playTuneIn: queuedPlayTuneIn,
+  leaveGroup: queuedLeaveGroup,
+  playClip: queuedPlayClip,
   sayAll,
   clipAll,
   applyPreset,
   updateDeviceState,
   deviceStates
 };
+
 
