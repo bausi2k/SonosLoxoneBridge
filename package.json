@@ -1,6 +1,6 @@
 {
   "name": "sonosloxonebridge",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "Modern lightweight bridge between Sonos local LAN speakers and Loxone Miniserver",
   "main": "src/app.js",
   "scripts": {
