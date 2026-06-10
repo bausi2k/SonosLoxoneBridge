@@ -1,5 +1,7 @@
 const os = require('os');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const { SonosManager, SonosDevice, MetaDataHelper } = require('@svrooij/sonos');
 const { getSettings } = require('./settings');
 const { normalizeRoomName, sendPlayStatus, sendVolumeStatus } = require('./loxone');
@@ -403,6 +405,22 @@ function getDevice(roomName) {
   let targetRoom = normName;
   if (settings.roomAliases && settings.roomAliases[normName]) {
     targetRoom = normalizeRoomName(settings.roomAliases[normName]);
+  }
+
+  // Check if it matches a preset name
+  const safePresetName = roomName.replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+  const presetPath = path.join(__dirname, '../presets', `${safePresetName}.json`);
+  if (fs.existsSync(presetPath)) {
+    try {
+      const preset = JSON.parse(fs.readFileSync(presetPath, 'utf8'));
+      if (preset.players && preset.players.length > 0) {
+        const coordinatorRoom = preset.players[0].roomName;
+        // Resolve the coordinator room of the preset
+        return getDevice(coordinatorRoom);
+      }
+    } catch (err) {
+      console.error(`[Sonos Debug] Failed to read preset "${roomName}" for device lookup:`, err.message);
+    }
   }
 
   const device = devices.find(d => normalizeRoomName(d.Name) === targetRoom);
@@ -982,9 +1000,38 @@ function getActiveRooms() {
  * Gets detailed room states including IP, volume, and playback state.
  */
 function getRoomStates() {
+  const roomsList = devices.map(d => {
+    const hasCoordinator = d.Coordinator && typeof d.Coordinator === 'object';
+    const isGrouped = hasCoordinator && d.Coordinator.uuid !== d.uuid;
+    const coordinatorUuid = isGrouped ? d.Coordinator.uuid : null;
+    return {
+      device: d,
+      normName: normalizeRoomName(d.Name),
+      uuid: d.uuid,
+      isGrouped,
+      coordinatorUuid
+    };
+  });
+
   const list = devices.map(d => {
     const norm = normalizeRoomName(d.Name);
     const state = deviceStates[norm] || { volume: -1, isPlaying: null, currentTrack: null, playMode: 'NORMAL', batteryLevel: null, isCharging: false };
+    
+    // Find grouping info
+    const info = roomsList.find(r => r.device === d);
+    let groupCoordinator = null;
+    let groupMembers = [];
+
+    if (info) {
+      if (info.isGrouped) {
+        const coordRoom = roomsList.find(r => r.uuid === info.coordinatorUuid);
+        groupCoordinator = coordRoom ? coordRoom.device.Name : 'Unbekannt';
+      } else {
+        const members = roomsList.filter(r => r.isGrouped && r.coordinatorUuid === info.uuid);
+        groupMembers = members.map(m => m.device.Name);
+      }
+    }
+
     return {
       name: d.Name,
       ip: d.ip || d.host || 'LAN',
@@ -995,14 +1042,13 @@ function getRoomStates() {
       diagnostics: d.diagnostics || null,
       batteryLevel: state.batteryLevel !== undefined ? state.batteryLevel : null,
       isCharging: !!state.isCharging,
-      isOffline: !!state.isOffline
+      isOffline: !!state.isOffline,
+      groupCoordinator,
+      groupMembers
     };
   });
   return list.sort((a, b) => a.name.localeCompare(b.name, 'de', { sensitivity: 'base' }));
 }
-
-const fs = require('fs');
-const path = require('path');
 
 /**
  * Plays a TuneIn radio station in the given room.

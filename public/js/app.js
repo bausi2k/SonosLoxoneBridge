@@ -723,6 +723,18 @@ document.addEventListener('DOMContentLoaded', () => {
                   <span>${room.batteryLevel}%</span>
                 </div>
               ` : ''}
+              ${room.groupCoordinator ? `
+                <div class="group-badge grouped-member" title="Gruppiert mit ${escapeHtml(room.groupCoordinator)}">
+                  <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle; margin-right: 3px;">link</span>
+                  <span style="font-size: 0.75rem; font-weight: 500;">&rarr; ${escapeHtml(room.groupCoordinator)}</span>
+                </div>
+              ` : ''}
+              ${room.groupMembers && room.groupMembers.length > 0 ? `
+                <div class="group-badge group-coordinator" title="Gruppen-Koordinator. Mitglieder: ${escapeHtml(room.groupMembers.join(', '))}">
+                  <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle; margin-right: 3px;">group</span>
+                  <span style="font-size: 0.75rem; font-weight: 500;">+${room.groupMembers.length}</span>
+                </div>
+              ` : ''}
             </div>
             <div class="speaker-ip-badge ${ipVisible ? 'visible' : ''}" data-ip="${escapeHtml(room.ip)}" data-diag-loaded="${!!room.diagnostics}">
               <div class="info-row"><strong>IP-Adresse:</strong> <span>${escapeHtml(room.ip)}</span></div>
@@ -814,6 +826,32 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
           } else if (badge) {
             badge.remove();
+          }
+
+          // Update group badge dynamically
+          let groupBadge = titleArea.querySelector('.group-badge');
+          if (room.groupCoordinator || (room.groupMembers && room.groupMembers.length > 0)) {
+            if (!groupBadge) {
+              groupBadge = document.createElement('div');
+              titleArea.appendChild(groupBadge);
+            }
+            if (room.groupCoordinator) {
+              groupBadge.className = 'group-badge grouped-member';
+              groupBadge.title = `Gruppiert mit ${room.groupCoordinator}`;
+              groupBadge.innerHTML = `
+                <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle; margin-right: 3px;">link</span>
+                <span style="font-size: 0.75rem; font-weight: 500;">&rarr; ${escapeHtml(room.groupCoordinator)}</span>
+              `;
+            } else {
+              groupBadge.className = 'group-badge group-coordinator';
+              groupBadge.title = `Gruppen-Koordinator. Mitglieder: ${room.groupMembers.join(', ')}`;
+              groupBadge.innerHTML = `
+                <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle; margin-right: 3px;">group</span>
+                <span style="font-size: 0.75rem; font-weight: 500;">+${room.groupMembers.length}</span>
+              `;
+            }
+          } else if (groupBadge) {
+            groupBadge.remove();
           }
         }
 
@@ -1471,6 +1509,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <button class="btn btn-secondary btn-apply-preset" data-preset="${escapeHtml(p.name)}" title="Preset anwenden">
               <span class="material-symbols-outlined">play_arrow</span>
             </button>
+            <button class="btn btn-secondary btn-edit-preset" data-preset="${escapeHtml(p.name)}" title="Preset bearbeiten">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
             <button class="btn btn-secondary btn-danger btn-delete-preset" data-preset="${escapeHtml(p.name)}" title="Preset löschen">
               <span class="material-symbols-outlined">delete</span>
             </button>
@@ -1503,6 +1544,51 @@ document.addEventListener('DOMContentLoaded', () => {
           btn.disabled = false;
           btn.innerHTML = originalContent;
         }
+      });
+    });
+
+    presetsListContainer.querySelectorAll('.btn-edit-preset').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const name = btn.dataset.preset;
+        const p = presets.find(item => item.name === name);
+        if (!p) return;
+
+        // Fill form fields
+        document.getElementById('preset-name').value = p.name;
+        presetCoordinatorSelect.value = p.config.players[0].roomName;
+        presetCoordinatorVolumeInput.value = p.config.players[0].volume;
+        
+        // Load favorites and members
+        await loadFavoritesForPresetCreator(p.config.players[0].roomName);
+        presetFavoriteSelect.value = p.config.favorite || '';
+        
+        document.getElementById('preset-sleep').value = p.config.sleep || '';
+        document.getElementById('preset-shuffle').checked = !!(p.config.playMode && p.config.playMode.shuffle);
+        document.getElementById('preset-pause-others').checked = !!p.config.pauseOthers;
+
+        // Render member players
+        updatePresetMembers();
+
+        // Check checkboxes and set volume for members
+        for (let i = 1; i < p.config.players.length; i++) {
+          const member = p.config.players[i];
+          const norm = normalizeSelector(member.roomName);
+          const chk = document.getElementById(`member-chk-${norm}`);
+          const slider = document.getElementById(`member-vol-${norm}`);
+          const valEl = document.getElementById(`member-val-${norm}`);
+          if (chk) {
+            chk.checked = true;
+          }
+          if (slider) {
+            slider.disabled = false;
+            slider.value = member.volume;
+          }
+          if (valEl) {
+            valEl.textContent = `${member.volume}%`;
+          }
+        }
+        
+        showToast(`Preset "${name}" in Editor geladen.`);
       });
     });
 
