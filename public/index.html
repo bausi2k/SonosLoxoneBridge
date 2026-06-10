@@ -89,7 +89,7 @@
 
           <!-- Preset Creator Card -->
           <div class="glass-card">
-            <h3>Preset erstellen</h3>
+            <h3 id="preset-form-title">Preset erstellen</h3>
             <form id="preset-form">
               <div class="form-group">
                 <label for="preset-name">Preset Name</label>
@@ -140,9 +140,12 @@
                 <label for="preset-pause-others" style="margin: 0; cursor: pointer;">Andere Räume pausieren</label>
               </div>
 
-              <div class="settings-actions">
-                <button type="submit" class="btn btn-primary btn-full">
+              <div class="settings-actions" style="display: flex; gap: 0.75rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
                   <span class="btn-icon"><span class="material-symbols-outlined">save</span></span> Preset speichern
+                </button>
+                <button type="button" id="btn-cancel-preset-edit" class="btn btn-secondary hidden" style="flex: 1;">
+                  Abbrechen
                 </button>
               </div>
             </form>
