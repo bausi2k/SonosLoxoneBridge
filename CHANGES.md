@@ -2,6 +2,12 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.10] - 2026-06-10
+- **Abbrechen-Funktion für Preset-Bearbeitung**:
+  - Hinzufügen einer Abbrechen-Schaltfläche (Cancel Button) im Preset-Erstellungsformular, wenn ein Preset zum Bearbeiten geladen wurde.
+  - Dynamische Anpassung des Titels des Formulars ("Preset bearbeiten" vs. "Preset erstellen") und Zurücksetzen aller Felder bei Klick auf "Abbrechen" oder nach erfolgreichem Speichern.
+  - Einführung einer globalen `.hidden` Hilfsklasse im CSS zur konsistenten Ausblendung von Elementen.
+
 ## [0.5.9] - 2026-06-10
 - **Gruppen- und Preset-Verbesserungen**:
   - **Gruppen-Visualisierung im UI**: Anzeige von Gruppierungsstatus und Mitgliedern direkt auf den Lautsprecherkarten im UI (Link-Symbol für Gruppenmitglieder mit Verweis auf den Koordinator; Gruppen-Symbol für Koordinatoren mit Angabe der Anzahl der Mitglieder).

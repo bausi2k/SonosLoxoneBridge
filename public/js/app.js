@@ -1459,6 +1459,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const presetCoordinatorVolumeInput = document.getElementById('preset-coordinator-volume');
   const presetMembersListContainer = document.getElementById('preset-members-list');
   const presetFavoriteSelect = document.getElementById('preset-favorite');
+  const btnCancelPresetEdit = document.getElementById('btn-cancel-preset-edit');
+  const presetFormTitle = document.getElementById('preset-form-title');
+
+  function clearPresetForm() {
+    if (presetForm) {
+      presetForm.reset();
+    }
+    if (presetCoordinatorSelect) {
+      presetCoordinatorSelect.value = '';
+    }
+    if (presetFavoriteSelect) {
+      presetFavoriteSelect.innerHTML = '<option value="">-- Keinen (Wiedergabe fortsetzen) --</option>';
+    }
+    updatePresetMembers();
+    if (presetFormTitle) {
+      presetFormTitle.textContent = 'Preset erstellen';
+    }
+    if (btnCancelPresetEdit) {
+      btnCancelPresetEdit.classList.add('hidden');
+    }
+  }
 
   // Fetch all saved presets and render
   async function fetchPresets() {
@@ -1588,6 +1609,14 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         
+        // Update Title and show cancel button
+        if (presetFormTitle) {
+          presetFormTitle.textContent = 'Preset bearbeiten';
+        }
+        if (btnCancelPresetEdit) {
+          btnCancelPresetEdit.classList.remove('hidden');
+        }
+
         showToast(`Preset "${name}" in Editor geladen.`);
       });
     });
@@ -1788,10 +1817,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (data.success) {
           showToast(`Preset "${data.name}" erfolgreich gespeichert!`);
-          presetForm.reset();
-          presetCoordinatorSelect.value = '';
-          presetFavoriteSelect.innerHTML = '<option value="">-- Keinen (Wiedergabe fortsetzen) --</option>';
-          updatePresetMembers();
+          clearPresetForm();
           fetchPresets();
         } else {
           showToast(`Speichern fehlgeschlagen: ${data.error || 'Unbekannt'}`, 'error');
@@ -1799,6 +1825,14 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         showToast('Netzwerkfehler beim Speichern des Presets', 'error');
       }
+    });
+  }
+
+  // Cancel preset editing
+  if (btnCancelPresetEdit) {
+    btnCancelPresetEdit.addEventListener('click', () => {
+      clearPresetForm();
+      showToast('Bearbeiten abgebrochen.');
     });
   }
 
