@@ -2086,3 +2086,29 @@ body {
   transform: translateZ(0);
 }
 
+/* Grouping Badges */
+.group-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.group-badge.grouped-member {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-color);
+  opacity: 0.85;
+}
+.group-badge.group-coordinator {
+  background: rgba(255, 165, 0, 0.12);
+  border: 1px solid rgba(255, 165, 0, 0.25);
+  color: var(--color-orange);
+}
+.dark-mode .group-badge.grouped-member {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+

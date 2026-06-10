@@ -2,6 +2,12 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.9] - 2026-06-10
+- **Gruppen- und Preset-Verbesserungen**:
+  - **Gruppen-Visualisierung im UI**: Anzeige von Gruppierungsstatus und Mitgliedern direkt auf den Lautsprecherkarten im UI (Link-Symbol für Gruppenmitglieder mit Verweis auf den Koordinator; Gruppen-Symbol für Koordinatoren mit Angabe der Anzahl der Mitglieder).
+  - **Preset-Steuerung per HTTP-GET**: Unterstützung für die direkte Steuerung von Preset-Gruppen über den Pfad `/:preset_name/say` (und andere Inbound-Befehle). Die Bridge leitet Befehle, die an einen Preset-Namen gerichtet sind, automatisch an das als Koordinator definierte Gerät weiter.
+  - **Presets editieren**: Hinzufügen einer Bearbeiten-Schaltfläche (Edit) bei den Preset-Karten, um bestehende Gruppenkonfigurationen direkt im Editor-Formular anzupassen.
+
 ## [0.5.8] - 2026-06-03
 - **Dynamische Dokumentation für Sonos-Favoriten**:
   - Dynamisches Auslesen und Anzeigen aller Sonos-Systemfavoriten direkt innerhalb der GET-Favoritendokumentation im "Anleitung"-Tab.

@@ -160,7 +160,9 @@ describe('Sonos Integration', () => {
       },
       batteryLevel: null,
       isCharging: false,
-      isOffline: false
+      isOffline: false,
+      groupCoordinator: null,
+      groupMembers: []
     });
   });
 
@@ -215,6 +217,30 @@ describe('Sonos Integration', () => {
     // Alias lookup
     const device3 = getDevice('wohnzimmer');
     expect(device3).toBe(mockDevice);
+  });
+
+  test('should lookup speaker by preset name', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const presetsDir = path.join(__dirname, '../presets');
+    if (!fs.existsSync(presetsDir)) {
+      fs.mkdirSync(presetsDir);
+    }
+    const tempPresetPath = path.join(presetsDir, 'test_preset_lookup.json');
+    fs.writeFileSync(tempPresetPath, JSON.stringify({
+      players: [
+        { roomName: 'Living Room', volume: 20 }
+      ]
+    }), 'utf8');
+
+    try {
+      const device = getDevice('test_preset_lookup');
+      expect(device).toBe(mockDevice);
+    } finally {
+      if (fs.existsSync(tempPresetPath)) {
+        fs.unlinkSync(tempPresetPath);
+      }
+    }
   });
 
   test('should throw error for unknown rooms', () => {
