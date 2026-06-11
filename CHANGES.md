@@ -2,6 +2,12 @@
 
 [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/bausi2k)
 
+## [0.5.11] - 2026-06-11
+- **Interaktives Lösen von Gruppenmitgliedern im UI**:
+  - Gruppenmitglieder-Badges (`→ Koordinator`) sind jetzt im UI anklickbar und bieten Hover-Effekte.
+  - Klick auf das Gruppenbadge öffnet eine Bestätigung zum Lösen des Lautsprechers aus der Gruppe.
+  - Unterstützung für die `leave`-Aktion in der POST `/api/control`-Schnittstelle hinzugefügt und per Unit-Tests abgesichert.
+
 ## [0.5.10] - 2026-06-10
 - **Abbrechen-Funktion für Preset-Bearbeitung**:
   - Hinzufügen einer Abbrechen-Schaltfläche (Cancel Button) im Preset-Erstellungsformular, wenn ein Preset zum Bearbeiten geladen wurde.

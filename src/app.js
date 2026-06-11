@@ -400,6 +400,14 @@ app.post('/api/control', async (req, res) => {
         }
         message = `Set playmode in "${room}" to ${value}`;
         break;
+      case 'leave':
+        if (isPrio) {
+          await leaveGroup(room, true);
+        } else {
+          await leaveGroup(room);
+        }
+        message = `Room "${room}" left its group`;
+        break;
       default:
         return res.status(400).json({ success: false, error: `Unknown action "${action}"` });
     }

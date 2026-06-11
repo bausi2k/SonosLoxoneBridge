@@ -724,7 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
               ` : ''}
               ${room.groupCoordinator ? `
-                <div class="group-badge grouped-member" title="Gruppiert mit ${escapeHtml(room.groupCoordinator)}">
+                <div class="group-badge grouped-member" data-room="${escapeHtml(room.name)}" data-coordinator="${escapeHtml(room.groupCoordinator)}" title="Gruppiert mit ${escapeHtml(room.groupCoordinator)}. Klicken zum Lösen.">
                   <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle; margin-right: 3px;">link</span>
                   <span style="font-size: 0.75rem; font-weight: 500;">&rarr; ${escapeHtml(room.groupCoordinator)}</span>
                 </div>
@@ -837,7 +837,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (room.groupCoordinator) {
               groupBadge.className = 'group-badge grouped-member';
-              groupBadge.title = `Gruppiert mit ${room.groupCoordinator}`;
+              groupBadge.setAttribute('data-room', room.name);
+              groupBadge.setAttribute('data-coordinator', room.groupCoordinator);
+              groupBadge.title = `Gruppiert mit ${room.groupCoordinator}. Klicken zum Lösen.`;
               groupBadge.innerHTML = `
                 <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle; margin-right: 3px;">link</span>
                 <span style="font-size: 0.75rem; font-weight: 500;">&rarr; ${escapeHtml(room.groupCoordinator)}</span>
@@ -1254,6 +1256,43 @@ document.addEventListener('DOMContentLoaded', () => {
         if (volIcon) volIcon.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
         
         sendVolumeUpdate(room, val);
+      }
+    });
+
+    // 8.5 Click to leave group
+    speakersGrid.addEventListener('click', async (e) => {
+      const badge = e.target.closest('.group-badge.grouped-member');
+      if (!badge) return;
+      e.preventDefault();
+      
+      const room = badge.getAttribute('data-room');
+      const coordinator = badge.getAttribute('data-coordinator');
+      
+      if (!confirm(`Möchten Sie den Lautsprecher "${room}" aus der Gruppe mit "${coordinator}" lösen?`)) {
+        return;
+      }
+      
+      try {
+        const originalContent = badge.innerHTML;
+        badge.innerHTML = '<div class="spinner" style="width: 14px; height: 14px; margin: 0; display: inline-block; vertical-align: middle;"></div>';
+        
+        const response = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room, action: 'leave' })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(`Lautsprecher "${room}" wurde aus der Gruppe gelöst.`);
+          setTimeout(fetchStatus, 1000);
+        } else {
+          showToast(data.error || 'Fehler beim Lösen aus der Gruppe', 'error');
+          badge.innerHTML = originalContent;
+        }
+      } catch (err) {
+        showToast('Netzwerkfehler', 'error');
+        console.error('[Bridge Control Error] leave action failed:', err);
       }
     });
 

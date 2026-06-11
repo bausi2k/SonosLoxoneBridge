@@ -13,6 +13,7 @@ jest.mock('../src/sonos', () => ({
   nextTrack: jest.fn().mockResolvedValue(true),
   previousTrack: jest.fn().mockResolvedValue(true),
   setRoomPlayMode: jest.fn().mockResolvedValue(true),
+  leaveGroup: jest.fn().mockResolvedValue(true),
   getRoomStates: jest.fn().mockReturnValue([
     { name: 'Living Room', ip: '192.168.1.50', volume: 25, isPlaying: true, playMode: 'NORMAL', batteryLevel: 85, isCharging: true }
   ]),
@@ -207,6 +208,15 @@ describe('Express REST & Inbound API', () => {
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
         expect(sonosMock.setRoomPlayMode).toHaveBeenCalledWith('livingroom', 'SHUFFLE');
+      });
+
+      test('should support leave action', async () => {
+        const res = await request(app)
+          .post('/api/control')
+          .send({ room: 'livingroom', action: 'leave' });
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(sonosMock.leaveGroup).toHaveBeenCalledWith('livingroom');
       });
 
       test('should return 400 if room or action missing', async () => {
